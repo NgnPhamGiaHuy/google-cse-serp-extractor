@@ -1,0 +1,1895 @@
+{% extends "base.html" %}
+{% block title %}SERP Scraper{% endblock %}
+{% block content %}
+<!-- Token Management Section -->
+<section aria-labelledby="token-title" class="card card-lg page" id="token-card" style="display:none">
+    <h2 id="token-title" class="card-title">API Configuration</h2>
+    <p class="muted" style="margin:0 0 16px">Configure your API tokens to start scraping.</p>
+
+    <div id="token-status" class="muted" style="margin-bottom:16px"></div>
+
+    <div class="grid" style="gap:20px">
+        <div>
+            <label for="google-api-key">Google API Key</label>
+            <input id="google-api-key" type="password" placeholder="Enter your Google API key (AIza...)"
+                autocomplete="off">
+            <div class="muted" style="margin-top:6px;font-size:12px">
+                Get your API key from <a href="https://console.cloud.google.com/" target="_blank" rel="noopener">Google
+                    Cloud Console</a>
+            </div>
+        </div>
+
+        <div>
+            <label for="google-cx">Google Custom Search Engine ID</label>
+            <input id="google-cx" type="text" placeholder="Enter your CSE ID" autocomplete="off">
+            <div class="muted" style="margin-top:6px;font-size:12px">
+                Get your CSE ID from <a href="https://cse.google.com/cse/" target="_blank" rel="noopener">Google Custom
+                    Search Engine</a>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Backup Tokens Section -->
+    <details style="margin-top:20px">
+        <summary><span class="chevron" aria-hidden="true"></span><span>Backup Tokens (Optional)</span></summary>
+        <div
+            style="margin-top:12px;padding:16px;background:var(--surface);border-radius:var(--radius);border:1px solid var(--border)">
+            <p class="muted" style="margin:0 0 16px">Set backup tokens to automatically switch when quota is exceeded.
+            </p>
+
+            <div class="grid" style="gap:20px">
+                <div>
+                    <label for="backup-google-api-key">Backup Google API Key</label>
+                    <input id="backup-google-api-key" type="password" placeholder="Enter backup Google API key"
+                        autocomplete="off">
+                    <div class="muted" style="margin-top:6px;font-size:12px">
+                        Will be used automatically when primary key exceeds quota
+                    </div>
+                </div>
+
+                <div>
+                    <label for="backup-google-cx">Backup Google CSE ID</label>
+                    <input id="backup-google-cx" type="text" placeholder="Enter backup CSE ID" autocomplete="off">
+                    <div class="muted" style="margin-top:6px;font-size:12px">
+                        Optional: Different search engine for backup
+                    </div>
+                </div>
+
+            </div>
+
+            <div style="margin-top:16px;display:flex;gap:8px">
+                <button id="save-backup-tokens">Save Backup Tokens</button>
+                <button class="secondary" id="validate-backup-tokens">Validate Backup Tokens</button>
+                <button class="secondary" id="clear-backup-tokens">Clear Backup Tokens</button>
+            </div>
+        </div>
+    </details>
+
+    <div style="margin-top:16px;display:flex;gap:8px">
+        <button id="save-tokens">Save Tokens</button>
+        <button class="secondary" id="validate-tokens">Validate Tokens</button>
+        <button class="secondary" id="clear-tokens">Clear All</button>
+    </div>
+</section>
+
+<section aria-labelledby="upload-title" class="card card-lg page" id="upload-card">
+    <h2 id="upload-title" class="card-title">Google SERP Scraper</h2>
+    <p class="muted" style="margin:0 0 16px">Upload a file of keywords or run a single query.</p>
+
+    <!-- Mode Toggle -->
+    <div class="mode-toggle" style="margin-bottom: 16px">
+        <div class="mode-toggle-buttons">
+            <button id="file-mode-btn" class="mode-btn active" data-mode="file">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14,2 14,8 20,8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10,9 9,9 8,9"></polyline>
+                </svg>
+                Upload File
+            </button>
+            <button id="query-mode-btn" class="mode-btn" data-mode="query">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="M21 21l-4.35-4.35"></path>
+                </svg>
+                Single Query
+            </button>
+        </div>
+    </div>
+
+    <!-- File Upload Mode -->
+    <div id="file-mode" class="mode-content">
+        <label for="file-input">Keywords file (CSV, XLSX, JSON)</label>
+        <div id="dropzone" class="dropzone" role="button" tabindex="0" aria-label="Upload keywords file">
+            <div class="dropzone-inner">
+                <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
+                    width="24" height="24" fill="none" viewBox="0 0 24 24">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 15v2a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-2M12 4v12m0-12 4 4m-4-4L8 8" />
+                </svg>
+                <div class="dropzone-text">
+                    <strong>Drag and drop</strong> a file here or <span class="linklike">browse</span>
+                    <div class="muted" style="margin-top:4px">Accepted: .csv, .xlsx, .xls, .json</div>
+                </div>
+            </div>
+            <input id="file-input" type="file" accept=".csv,.xlsx,.xls,.json" class="sr-only" aria-hidden="true">
+        </div>
+        <div id="file-meta" class="muted" style="margin-top:8px"></div>
+        <div id="file-preview" class="card" style="margin-top:12px;display:none">
+            <div class="muted" style="margin-bottom:8px">Preview (first 5 rows)</div>
+            <div id="preview-table" style="overflow:auto"></div>
+            <div id="validation-errors" class="muted" style="color:#b91c1c;margin-top:8px"></div>
+        </div>
+    </div>
+
+    <!-- Single Query Mode -->
+    <div id="query-mode" class="mode-content" style="display:none">
+        <label for="manual-query">Manual query</label>
+        <div class="query-input-container">
+            <textarea id="manual-query" placeholder="e.g. best crm for startups
+
+Or paste JSON data:
+{
+  &quot;keywords&quot;: [&quot;keyword1&quot;, &quot;keyword2&quot;],
+  &quot;config&quot;: {&quot;max_pages&quot;: 3}
+}" rows="8"></textarea>
+            <button id="run-single" class="run-single-btn">Run</button>
+        </div>
+        <div id="long-query-hint" class="muted" style="margin-top:6px;display:none"></div>
+
+        <!-- Query Preview for Single Query Mode -->
+        <div id="query-preview" class="query-preview" style="display:none">
+            <div class="query-preview-header">
+                <span class="query-preview-label">Query Preview:</span>
+                <button type="button" id="copy-query-btn" class="copy-query-btn" title="Copy query">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                </button>
+            </div>
+            <div id="query-preview-text" class="query-preview-text"></div>
+        </div>
+    </div>
+
+    <details style="margin-top:16px">
+        <summary><span class="chevron" aria-hidden="true"></span><span>Advanced options</span></summary>
+        <div class="grid grid-2" style="margin-top:12px">
+            <div style="display:none">
+            </div>
+            <div style="display:none">
+            </div>
+            <div style="display:none">
+                <!-- deprecated inputs removed: country_code, language_code, device -->
+                <option value="">Default</option>
+                <option value="desktop">Desktop</option>
+                <option value="mobile">Mobile</option>
+                </select>
+            </div>
+            <div>
+                <label for="results_per_page">Results per page (10–100)</label>
+                <input id="results_per_page" type="number" min="10" max="100" value="100">
+            </div>
+            <div>
+                <label for="max_pages">Max pages</label>
+                <select id="max_pages">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3" selected>3</option>
+                </select>
+            </div>
+            <div>
+                <label for="rate">Rate</label>
+                <select id="rate">
+                    <option value="low">Low concurrency</option>
+                    <option value="medium" selected>Medium concurrency</option>
+                    <option value="high">High concurrency</option>
+                </select>
+            </div>
+        </div>
+        <div class="grid" style="margin-top:12px">
+            <div>
+                <label><input id="include_organic" type="checkbox" checked> Organic</label>
+                <label><input id="include_paa" type="checkbox"> PAA</label>
+                <label><input id="include_related" type="checkbox"> Related</label>
+                <label><input id="include_ads" type="checkbox"> Ads</label>
+                <label><input id="include_ai_overview" type="checkbox"> AI Overview</label>
+            </div>
+            <div>
+                <label><input id="auto_split" type="checkbox" checked> Auto‑split long queries</label>
+                <div id="split-count" class="muted" style="margin-top:4px"></div>
+            </div>
+        </div>
+        <div style="margin-top:12px">
+            <div class="muted" style="margin-bottom:6px">Profile platforms</div>
+            <div id="profile-platforms-container">
+                <div id="platform-input-wrapper" class="platform-input-wrapper">
+                    <input type="text" id="platform-input"
+                        placeholder="Type platform name (e.g., LinkedIn, GitHub, Twitter)" autocomplete="off"
+                        class="platform-input">
+                    <button type="button" id="platform-add-btn" class="platform-add-btn" title="Add platform">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                    </button>
+                    <div id="platform-suggestions" class="platform-suggestions" style="display:none"></div>
+                </div>
+                <div id="selected-platforms" class="selected-platforms"></div>
+                <div id="platform-error" class="platform-error" style="display:none"></div>
+            </div>
+        </div>
+    </details>
+
+    <div style="margin-top:16px;display:flex;gap:8px">
+        <button id="start-batch">Start batch</button>
+        <button class="secondary" id="clear">Clear</button>
+    </div>
+</section>
+
+<section aria-labelledby="progress-title" style="margin-top:20px" class="page">
+    <div id="progress-container" class="progress-container" style="display:none">
+        <div class="progress-header">
+            <h2 id="progress-title" class="progress-title">Extraction Progress</h2>
+            <div id="progress-percentage" class="progress-percentage">0%</div>
+        </div>
+
+        <div id="progress-bar" class="progress-bar" aria-label="Overall progress">
+            <div id="progress-fill" class="progress-fill" style="width:0%"></div>
+        </div>
+
+        <div id="progress-status" class="progress-status">
+            <div id="progress-status-icon" class="progress-status-icon loading">⟳</div>
+            <span id="progress-status-text">Ready to start...</span>
+        </div>
+
+        <div class="progress-details">
+            <div class="progress-stats">
+                <div class="progress-stat">
+                    <span class="progress-stat-label">Keywords:</span>
+                    <span id="progress-keywords" class="progress-stat-value">0 / 0</span>
+                </div>
+                <div class="progress-stat">
+                    <span class="progress-stat-label">Results:</span>
+                    <span id="progress-results" class="progress-stat-value">0</span>
+                </div>
+                <div class="progress-stat">
+                    <span class="progress-stat-label">Status:</span>
+                    <span id="progress-job-status" class="progress-stat-value">Idle</span>
+                </div>
+            </div>
+            <div id="progress-time" class="muted"></div>
+        </div>
+    </div>
+</section>
+
+<!-- Quota Error Display Section -->
+<section id="quota-error-section" class="page" style="display:none; margin-top:20px">
+    <div id="quota-error-container"></div>
+</section>
+
+<section aria-labelledby="results-title" style="margin-top:20px; display:none" class="page" id="results-section">
+    <div class="toolbar">
+        <h2 id="results-title" class="card-title" style="margin:0">Results</h2>
+        <div class="results-controls">
+            <input id="filter-query" type="text" placeholder="Filter by query or domain">
+            <button class="secondary" id="export-json">Export JSON</button>
+            <button class="secondary" id="export-csv">Export CSV</button>
+            <button class="secondary" id="export-xlsx">Export XLSX</button>
+        </div>
+    </div>
+
+    <div id="results-list" class="grid" style="gap:12px"></div>
+
+    <div class="toolbar" style="margin-top:12px">
+        <button class="secondary" id="prev-page">Previous</button>
+        <div class="muted" id="page-indicator">Page 1</div>
+        <button class="secondary" id="next-page">Next</button>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    (function () {
+        const $ = (id) => document.getElementById(id);
+        const state = { file: null, parsed: null, jobId: null, results: [], page: 1, perPage: 100 };
+
+        // Token management state
+        const tokenState = {
+            hasValidTokens: false,
+            tokens: {
+                google_api_key: null,
+                google_cx: null
+            }
+        };
+
+        // Token management functions
+        async function checkTokenStatus() {
+            try {
+                const response = await fetch('/api/token-status');
+                const data = await response.json();
+                if (data.success) {
+                    const status = data.status;
+                    const hasGoogle = status.google_api_key.has_env || status.google_api_key.has_temp;
+                    const hasCx = status.google_cx.has_env || status.google_cx.has_temp;
+
+                    if (hasGoogle && hasCx) {
+                        tokenState.hasValidTokens = true;
+                        $('token-card').style.display = 'none';
+                        $('upload-card').style.display = 'block';
+                        // Show Results section if there are existing results
+                        if (state.results && state.results.length > 0) {
+                            $('results-section').style.display = 'block';
+                        }
+                        return;
+                    }
+                }
+
+                // Show token configuration if no valid tokens
+                $('token-card').style.display = 'block';
+                $('upload-card').style.display = 'none';
+                $('results-section').style.display = 'none';
+                updateTokenStatus();
+            } catch (error) {
+                console.error('Failed to check token status:', error);
+                $('token-card').style.display = 'block';
+                $('upload-card').style.display = 'none';
+                $('results-section').style.display = 'none';
+            }
+        }
+
+        function updateTokenStatus() {
+            const status = $('token-status');
+            const hasGoogle = $('google-api-key').value.trim();
+            const hasCx = $('google-cx').value.trim();
+
+            if (hasGoogle && hasCx) {
+                status.textContent = '✓ Google API configuration complete';
+                status.style.color = 'var(--accent)';
+            } else {
+                status.textContent = 'Please configure your Google API credentials to start scraping';
+                status.style.color = 'var(--muted)';
+            }
+        }
+
+        async function saveTokens() {
+            const tokens = {
+                google_api_key: $('google-api-key').value.trim(),
+                google_cx: $('google-cx').value.trim()
+            };
+
+            if (!tokens.google_api_key || !tokens.google_cx) {
+                alert('Google API Key and CSE ID are required');
+                return;
+            }
+
+            try {
+                // Save each token
+                for (const [tokenType, tokenValue] of Object.entries(tokens)) {
+                    if (tokenValue) {
+                        const formData = new FormData();
+                        formData.append('token_type', tokenType);
+                        formData.append('token_value', tokenValue);
+
+                        const response = await fetch('/api/set-token', {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        const result = await response.json();
+                        if (!result.success) {
+                            alert(`Failed to save ${tokenType}: ${result.message}`);
+                            return;
+                        }
+                    }
+                }
+
+                // Check status after saving
+                await checkTokenStatus();
+
+                // Show success message with details
+                alert('✅ Tokens saved successfully!\n\nYou can now continue using the tool with your new API key.');
+
+                // If we're in quota exceeded mode and have valid tokens, switch back to upload card
+                if (tokens.google_api_key && tokens.google_cx) {
+                    const tokenCard = document.getElementById('token-card');
+                    const uploadCard = document.getElementById('upload-card');
+                    if (tokenCard && uploadCard) {
+                        tokenCard.style.display = 'none';
+                        uploadCard.style.display = 'block';
+
+                        // Hide quota error if it was showing
+                        hideQuotaError();
+
+                        // Only clear job state if there are no existing results
+                        if (!state.results || state.results.length === 0) {
+                            clearJobState();
+                        } else {
+                            // Show Results section if there are existing results
+                            $('results-section').style.display = 'block';
+                        }
+                        resetUploadForm();
+
+                        // Scroll to upload card
+                        uploadCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to save tokens:', error);
+                alert('Failed to save tokens. Please try again.');
+            }
+        }
+
+        async function validateTokens() {
+            const tokens = {
+                google_api_key: $('google-api-key').value.trim(),
+                google_cx: $('google-cx').value.trim()
+            };
+
+            if (!tokens.google_api_key || !tokens.google_cx) {
+                alert('Google API Key and CSE ID are required for validation');
+                return;
+            }
+
+            try {
+                const results = [];
+
+                // Validate Google API Key
+                if (tokens.google_api_key) {
+                    const formData = new FormData();
+                    formData.append('token_type', 'google_api_key');
+                    formData.append('token_value', tokens.google_api_key);
+
+                    const response = await fetch('/api/validate-token', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const result = await response.json();
+                    results.push(`Google API Key: ${result.valid ? '✓' : '✗'} ${result.message}`);
+                }
+
+
+                alert(results.join('\n'));
+            } catch (error) {
+                console.error('Failed to validate tokens:', error);
+                alert('Failed to validate tokens. Please try again.');
+            }
+        }
+
+        async function clearTokens() {
+            if (!confirm('Are you sure you want to clear all tokens?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/clear-tokens', {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    $('google-api-key').value = '';
+                    $('google-cx').value = '';
+                    updateTokenStatus();
+                    alert('All tokens cleared');
+                } else {
+                    alert('Failed to clear tokens');
+                }
+            } catch (error) {
+                console.error('Failed to clear tokens:', error);
+                alert('Failed to clear tokens. Please try again.');
+            }
+        }
+
+        // Token management event listeners
+        $('google-api-key').addEventListener('input', updateTokenStatus);
+        $('google-cx').addEventListener('input', updateTokenStatus);
+        $('save-tokens').addEventListener('click', saveTokens);
+        $('validate-tokens').addEventListener('click', validateTokens);
+        $('clear-tokens').addEventListener('click', clearTokens);
+
+        // Backup token management functions
+        async function saveBackupTokens() {
+            const backupTokens = {
+                google_api_key: $('backup-google-api-key').value.trim(),
+                google_cx: $('backup-google-cx').value.trim()
+            };
+
+            try {
+                for (const [tokenType, tokenValue] of Object.entries(backupTokens)) {
+                    if (tokenValue) {
+                        const formData = new FormData();
+                        formData.append('token_type', tokenType);
+                        formData.append('token_value', tokenValue);
+
+                        const response = await fetch('/api/set-backup-token', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const result = await response.json();
+
+                        if (!result.success) {
+                            alert(`Failed to save backup ${tokenType}: ${result.message}`);
+                            return;
+                        }
+                    }
+                }
+                alert('Backup tokens saved successfully!');
+            } catch (error) {
+                console.error('Failed to save backup tokens:', error);
+                alert('Failed to save backup tokens. Please try again.');
+            }
+        }
+
+        async function validateBackupTokens() {
+            const backupTokens = {
+                google_api_key: $('backup-google-api-key').value.trim(),
+                google_cx: $('backup-google-cx').value.trim()
+            };
+
+            try {
+                const results = [];
+                for (const [tokenType, tokenValue] of Object.entries(backupTokens)) {
+                    if (tokenValue) {
+                        const formData = new FormData();
+                        formData.append('token_type', tokenType);
+                        formData.append('token_value', tokenValue);
+
+                        const response = await fetch('/api/validate-token', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const result = await response.json();
+
+                        if (result.valid) {
+                            results.push(`✓ Backup ${tokenType}: ${result.message}`);
+                        } else {
+                            results.push(`✗ Backup ${tokenType}: ${result.message}`);
+                        }
+                    }
+                }
+
+                if (results.length === 0) {
+                    alert('No backup tokens to validate');
+                } else {
+                    alert(results.join('\n'));
+                }
+            } catch (error) {
+                console.error('Failed to validate backup tokens:', error);
+                alert('Failed to validate backup tokens. Please try again.');
+            }
+        }
+
+        async function clearBackupTokens() {
+            if (!confirm('Are you sure you want to clear all backup tokens?')) {
+                return;
+            }
+            try {
+                const response = await fetch('/api/clear-backup-tokens', { method: 'DELETE' });
+                const result = await response.json();
+                if (result.success) {
+                    alert('Backup tokens cleared successfully');
+                    // Clear form fields
+                    $('backup-google-api-key').value = '';
+                    $('backup-google-cx').value = '';
+                } else {
+                    alert('Failed to clear backup tokens');
+                }
+            } catch (error) {
+                console.error('Failed to clear backup tokens:', error);
+                alert('Failed to clear backup tokens. Please try again.');
+            }
+        }
+
+        // Add event listeners for backup token management
+        $('save-backup-tokens').addEventListener('click', saveBackupTokens);
+        $('validate-backup-tokens').addEventListener('click', validateBackupTokens);
+        $('clear-backup-tokens').addEventListener('click', clearBackupTokens);
+
+        // Initialize token status check
+        checkTokenStatus();
+
+        // Platform suggestions database
+        const platformSuggestions = [
+            { name: 'LinkedIn', domain: 'linkedin.com/in', siteFilter: 'site:linkedin.com/in' },
+            { name: 'LinkedIn Vietnam', domain: 'vn.linkedin.com/in', siteFilter: 'site:vn.linkedin.com/in' },
+            { name: 'Facebook', domain: 'facebook.com', siteFilter: 'site:facebook.com' },
+            { name: 'GitHub', domain: 'github.com', siteFilter: 'site:github.com' },
+            { name: 'Twitter', domain: 'twitter.com', siteFilter: 'site:twitter.com' },
+            { name: 'Instagram', domain: 'instagram.com', siteFilter: 'site:instagram.com' },
+            { name: 'Stack Overflow', domain: 'stackoverflow.com', siteFilter: 'site:stackoverflow.com' },
+            { name: 'Reddit', domain: 'reddit.com', siteFilter: 'site:reddit.com' },
+            { name: 'YouTube', domain: 'youtube.com', siteFilter: 'site:youtube.com' },
+            { name: 'Medium', domain: 'medium.com', siteFilter: 'site:medium.com' },
+            { name: 'Dev.to', domain: 'dev.to', siteFilter: 'site:dev.to' },
+            { name: 'Behance', domain: 'behance.net', siteFilter: 'site:behance.net' },
+            { name: 'Dribbble', domain: 'dribbble.com', siteFilter: 'site:dribbble.com' },
+            { name: 'AngelList', domain: 'angel.co', siteFilter: 'site:angel.co' },
+            { name: 'Crunchbase', domain: 'crunchbase.com', siteFilter: 'site:crunchbase.com' }
+        ];
+
+        // Platform management state
+        let selectedPlatforms = new Map(); // name -> {name, domain, siteFilter}
+        let suggestionTimeout = null;
+
+        // Platform name to site filter conversion
+        async function convertPlatformToSiteFilter(platformName) {
+            const normalized = platformName.toLowerCase().trim();
+
+            // Check if it's already a site: filter
+            if (normalized.startsWith('site:')) {
+                return normalized;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('platform_name', platformName);
+
+                const response = await fetch('/api/convert-platform', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    return data.site_filter;
+                }
+            } catch (error) {
+                console.warn('Failed to convert platform via API:', error);
+            }
+
+            // Fallback to local conversion
+            const suggestion = platformSuggestions.find(p =>
+                p.name.toLowerCase() === normalized ||
+                p.domain.toLowerCase().includes(normalized)
+            );
+            if (suggestion) {
+                return suggestion.siteFilter;
+            }
+
+            // Auto-convert common patterns
+            let domain = normalized;
+
+            // Add .com if no TLD
+            if (!domain.includes('.') && !domain.includes(' ')) {
+                domain = domain + '.com';
+            }
+
+            // Handle common profile paths
+            if (domain.includes('linkedin') && !domain.includes('/in')) {
+                domain = domain.replace(/\/$/, '') + '/in';
+            }
+
+            return `site:${domain}`;
+        }
+
+        // Validate platform name
+        function validatePlatformName(platformName) {
+            if (!platformName || platformName.trim().length === 0) {
+                return { valid: false, error: 'Platform name cannot be empty' };
+            }
+
+            const normalized = platformName.toLowerCase().trim();
+
+            // Check for invalid characters
+            if (!/^[a-zA-Z0-9\s\.\-_\/]+$/.test(normalized)) {
+                return { valid: false, error: 'Platform name contains invalid characters' };
+            }
+
+            // Check if already selected
+            if (selectedPlatforms.has(normalized)) {
+                return { valid: false, error: 'Platform already selected' };
+            }
+
+            return { valid: true };
+        }
+
+        // Show platform suggestions
+        async function showSuggestions(query) {
+            const suggestionsContainer = document.getElementById('platform-suggestions');
+            if (!query || query.length < 1) {
+                suggestionsContainer.style.display = 'none';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/platform-suggestions?query=${encodeURIComponent(query)}&limit=8`);
+                const data = await response.json();
+
+                if (!data.success || !data.suggestions || data.suggestions.length === 0) {
+                    suggestionsContainer.style.display = 'none';
+                    return;
+                }
+
+                suggestionsContainer.innerHTML = data.suggestions.map(platform => `
+                    <div class="platform-suggestion" data-platform='${JSON.stringify(platform)}'>
+                        <span class="platform-suggestion-name">${platform.name}</span>
+                        <span class="platform-suggestion-domain">${platform.domain}</span>
+                    </div>
+                `).join('');
+
+                suggestionsContainer.style.display = 'block';
+
+                // Add click handlers
+                suggestionsContainer.querySelectorAll('.platform-suggestion').forEach(el => {
+                    el.addEventListener('click', async () => {
+                        const platform = JSON.parse(el.dataset.platform);
+                        await addPlatform(platform.name);
+                        document.getElementById('platform-input').value = '';
+                        suggestionsContainer.style.display = 'none';
+                    });
+                });
+            } catch (error) {
+                console.warn('Failed to fetch platform suggestions:', error);
+                suggestionsContainer.style.display = 'none';
+            }
+        }
+
+        // Add platform to selection
+        async function addPlatform(platformName) {
+            const validation = validatePlatformName(platformName);
+            if (!validation.valid) {
+                showPlatformError(validation.error);
+                return;
+            }
+
+            const normalized = platformName.toLowerCase().trim();
+            const siteFilter = await convertPlatformToSiteFilter(platformName);
+            const domain = siteFilter.replace('site:', '');
+
+            selectedPlatforms.set(normalized, {
+                name: platformName,
+                domain: domain,
+                siteFilter: siteFilter
+            });
+
+            renderSelectedPlatforms();
+            hidePlatformError();
+            savePlatforms();
+            updateAllPreviews();
+        }
+
+        // Remove platform from selection
+        function removePlatform(platformName) {
+            const normalized = platformName.toLowerCase().trim();
+            selectedPlatforms.delete(normalized);
+            renderSelectedPlatforms();
+            savePlatforms();
+            updateAllPreviews();
+        }
+
+        // Render selected platforms as tags
+        function renderSelectedPlatforms() {
+            const container = document.getElementById('selected-platforms');
+            container.innerHTML = Array.from(selectedPlatforms.values()).map(platform => `
+                <div class="platform-tag" data-platform="${platform.name}">
+                    <span class="platform-tag-name">${platform.name}</span>
+                    <span class="platform-tag-domain">${platform.domain}</span>
+                    <button type="button" class="platform-tag-remove" data-platform-name="${platform.name}" title="Remove platform">×</button>
+                </div>
+            `).join('');
+        }
+
+        // Show platform error
+        function showPlatformError(message) {
+            const errorEl = document.getElementById('platform-error');
+            errorEl.textContent = message;
+            errorEl.style.display = 'block';
+        }
+
+        // Hide platform error
+        function hidePlatformError() {
+            const errorEl = document.getElementById('platform-error');
+            errorEl.style.display = 'none';
+        }
+
+        // Get selected profile sites (for backend compatibility)
+        function getSelectedProfileSites() {
+            return Array.from(selectedPlatforms.values()).map(platform => platform.siteFilter);
+        }
+
+        // Apply the same query transformation logic as the backend
+        function applyQueryTransformation(query) {
+            if (!query || !query.trim()) {
+                return query;
+            }
+
+            // Get the site filters from selected platforms
+            const siteFilters = Array.from(selectedPlatforms.values()).map(platform => platform.siteFilter);
+
+            // If no platforms selected, return original query
+            if (siteFilters.length === 0) {
+                return query;
+            }
+
+            // Check if query already contains site filters (avoid duplication)
+            const queryLower = query.toLowerCase();
+            const hasExistingSiteFilter = siteFilters.some(site => {
+                const domain = site.split(':')[1];
+                return domain && queryLower.includes(domain);
+            });
+
+            if (hasExistingSiteFilter) {
+                return query;
+            }
+
+            // Add site filters to the query (same format as backend)
+            return `${query} (${siteFilters.join(' OR ')})`;
+        }
+
+        // Generate query preview for manual input
+        function generateQueryPreview() {
+            const queryPreview = document.getElementById('query-preview');
+            const queryPreviewText = document.getElementById('query-preview-text');
+            const queryMode = document.getElementById('query-mode');
+
+            // Only show in query mode
+            if (queryMode.style.display === 'none') {
+                queryPreview.style.display = 'none';
+                return;
+            }
+
+            if (selectedPlatforms.size === 0) {
+                queryPreview.style.display = 'none';
+                return;
+            }
+
+            // Show the preview
+            queryPreview.style.display = 'block';
+
+            // Get the manual query
+            const manualQuery = document.getElementById('manual-query').value.trim();
+            if (!manualQuery) {
+                queryPreviewText.textContent = 'Enter a search query to see preview...';
+                return;
+            }
+
+            // Try to parse as JSON first
+            try {
+                const jsonData = JSON.parse(manualQuery);
+                if (jsonData.keywords && Array.isArray(jsonData.keywords)) {
+                    // Show preview for JSON keywords
+                    const transformedKeywords = jsonData.keywords.map(keyword => applyQueryTransformation(keyword));
+                    queryPreviewText.textContent = `JSON Keywords (${transformedKeywords.length}):\n\n${transformedKeywords.join('\n')}`;
+                    return;
+                }
+            } catch (e) {
+                // Not valid JSON, treat as single query
+            }
+
+            // Treat as single query (split by newlines for multiple queries)
+            const queries = manualQuery.split('\n').filter(q => q.trim()).map(q => q.trim());
+            if (queries.length > 1) {
+                // Multiple queries
+                const transformedQueries = queries.map(query => applyQueryTransformation(query));
+                queryPreviewText.textContent = `Multiple Queries (${transformedQueries.length}):\n\n${transformedQueries.join('\n')}`;
+            } else {
+                // Single query
+                const transformedQuery = applyQueryTransformation(queries[0]);
+                queryPreviewText.textContent = transformedQuery;
+            }
+        }
+
+        // Update file preview with transformed queries
+        function updateFilePreview() {
+            const fileMode = document.getElementById('file-mode');
+            const filePreview = document.getElementById('file-preview');
+
+            // Only show in file mode
+            if (fileMode.style.display === 'none') {
+                filePreview.style.display = 'none';
+                return;
+            }
+
+            if (!state.parsed || !state.parsed.keywords) {
+                filePreview.style.display = 'none';
+                return;
+            }
+
+            // Show the file preview
+            filePreview.style.display = 'block';
+
+            const rows = state.parsed.keywords.slice(0, 5);
+            const table = document.createElement('table');
+            table.style.width = '100%';
+            table.style.borderCollapse = 'collapse';
+            table.innerHTML = '<thead><tr><th style="text-align:left;padding:6px;border-bottom:1px solid var(--border)">keyword</th></tr></thead>';
+            const tb = document.createElement('tbody');
+
+            rows.forEach(keyword => {
+                const tr = document.createElement('tr');
+                // Apply the same transformation as the backend
+                const transformedKeyword = applyQueryTransformation(keyword);
+                tr.innerHTML = `<td style="padding:6px;border-bottom:1px solid var(--border)">${transformedKeyword}</td>`;
+                tb.appendChild(tr);
+            });
+
+            table.appendChild(tb);
+            $('preview-table').innerHTML = '';
+            $('preview-table').appendChild(table);
+        }
+
+        // Update both previews (manual query and file upload)
+        function updateAllPreviews() {
+            generateQueryPreview();
+            updateFilePreview();
+        }
+
+        // Copy query to clipboard
+        async function copyQueryToClipboard() {
+            const queryPreviewText = document.getElementById('query-preview-text');
+            const query = queryPreviewText.textContent;
+
+            try {
+                await navigator.clipboard.writeText(query);
+
+                // Show feedback
+                const copyBtn = document.getElementById('copy-query-btn');
+                const originalTitle = copyBtn.title;
+                copyBtn.title = 'Copied!';
+                copyBtn.style.color = 'var(--accent)';
+
+                setTimeout(() => {
+                    copyBtn.title = originalTitle;
+                    copyBtn.style.color = '';
+                }, 2000);
+            } catch (err) {
+                console.warn('Failed to copy query:', err);
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = query;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+            }
+        }
+
+        // Load platforms from localStorage
+        async function loadPlatforms() {
+            // Clear any existing platforms first
+            selectedPlatforms.clear();
+
+            const saved = localStorage.getItem('profile_platforms');
+            if (saved) {
+                try {
+                    const platforms = JSON.parse(saved);
+                    platforms.forEach(platform => {
+                        selectedPlatforms.set(platform.name.toLowerCase(), platform);
+                    });
+                    renderSelectedPlatforms();
+                    updateAllPreviews();
+                } catch (e) {
+                    console.warn('Failed to load saved platforms:', e);
+                }
+            } else {
+                // No default platforms - let user choose
+                renderSelectedPlatforms();
+                updateAllPreviews();
+            }
+        }
+
+        // Save platforms to localStorage
+        function savePlatforms() {
+            const platforms = Array.from(selectedPlatforms.values());
+            localStorage.setItem('profile_platforms', JSON.stringify(platforms));
+        }
+
+        // Initialize platform input
+        function initializePlatformInput() {
+            const input = document.getElementById('platform-input');
+            const addButton = document.getElementById('platform-add-btn');
+            const suggestionsContainer = document.getElementById('platform-suggestions');
+
+            // Function to add platform from input
+            async function addPlatformFromInput() {
+                const value = input.value.trim();
+                if (value) {
+                    await addPlatform(value);
+                    input.value = '';
+                    suggestionsContainer.style.display = 'none';
+                } else {
+                    // Show helpful message when no content
+                    showPlatformError('Please enter a platform name before adding');
+                    // Focus back to input for better UX
+                    input.focus();
+                    // Add visual feedback to button and input
+                    addButton.classList.add('error-state');
+                    input.classList.add('error-state');
+                    setTimeout(() => {
+                        addButton.classList.remove('error-state');
+                        input.classList.remove('error-state');
+                    }, 300);
+                }
+            }
+
+            // Input event with debouncing
+            input.addEventListener('input', (e) => {
+                clearTimeout(suggestionTimeout);
+                suggestionTimeout = setTimeout(() => {
+                    showSuggestions(e.target.value);
+                }, 150);
+            });
+
+            // Handle Enter key
+            input.addEventListener('keydown', async (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    await addPlatformFromInput();
+                } else if (e.key === 'Escape') {
+                    suggestionsContainer.style.display = 'none';
+                    e.target.blur();
+                }
+            });
+
+            // Handle add button click
+            addButton.addEventListener('click', async (e) => {
+                e.preventDefault();
+                await addPlatformFromInput();
+            });
+
+            // Hide suggestions when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#platform-input-wrapper')) {
+                    suggestionsContainer.style.display = 'none';
+                }
+            });
+
+            // Event delegation for remove buttons
+            document.addEventListener('click', (e) => {
+                if (e.target.classList.contains('platform-tag-remove')) {
+                    const platformName = e.target.getAttribute('data-platform-name');
+                    if (platformName) {
+                        removePlatform(platformName);
+                    }
+                }
+            });
+
+            // Load saved platforms
+            loadPlatforms();
+
+            // Add copy button event listener
+            document.getElementById('copy-query-btn').addEventListener('click', copyQueryToClipboard);
+
+            // Update preview when manual query changes
+            document.getElementById('manual-query').addEventListener('input', updateAllPreviews);
+
+            // Handle Enter key in textarea (Ctrl+Enter to run)
+            document.getElementById('manual-query').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    document.getElementById('run-single').click();
+                }
+            });
+        }
+
+        // Initialize mode toggle functionality
+        function initializeModeToggle() {
+            const fileModeBtn = document.getElementById('file-mode-btn');
+            const queryModeBtn = document.getElementById('query-mode-btn');
+            const fileMode = document.getElementById('file-mode');
+            const queryMode = document.getElementById('query-mode');
+
+            // Set initial state
+            let currentMode = 'file';
+
+            function switchMode(mode) {
+                // Update button states
+                fileModeBtn.classList.toggle('active', mode === 'file');
+                queryModeBtn.classList.toggle('active', mode === 'query');
+
+                // Show/hide content
+                fileMode.style.display = mode === 'file' ? 'block' : 'none';
+                queryMode.style.display = mode === 'query' ? 'block' : 'none';
+
+                currentMode = mode;
+
+                // Update previews when switching modes
+                updateAllPreviews();
+            }
+
+            // Add event listeners
+            fileModeBtn.addEventListener('click', () => switchMode('file'));
+            queryModeBtn.addEventListener('click', () => switchMode('query'));
+
+            // Initialize with file mode
+            switchMode('file');
+        }
+
+        // Initialize platform input when DOM is ready
+        initializePlatformInput();
+
+        // Initialize mode toggle
+        initializeModeToggle();
+
+        function updateSplitHint(q) {
+            if (!q) { $('long-query-hint').style.display = 'none'; return }
+            const n = Math.ceil(q.length / 80);
+            $('long-query-hint').textContent = n > 1 ? `Will split into ${n} subqueries` : '';
+            $('long-query-hint').style.display = n > 1 ? 'block' : 'none';
+            $('split-count').textContent = n > 1 ? `${n} subqueries expected` : '';
+        }
+
+        $('manual-query').addEventListener('input', (e) => updateSplitHint(e.target.value));
+
+        // Drag & drop wiring
+        const dz = document.getElementById('dropzone');
+        function openPicker() { document.getElementById('file-input').click(); }
+        dz.addEventListener('click', openPicker);
+        dz.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPicker(); } });
+        ;['dragenter', 'dragover'].forEach(ev => dz.addEventListener(ev, (e) => { e.preventDefault(); e.stopPropagation(); dz.classList.add('dragover'); }));
+        ;['dragleave', 'dragend', 'drop'].forEach(ev => dz.addEventListener(ev, (e) => { e.preventDefault(); e.stopPropagation(); dz.classList.remove('dragover'); }));
+        dz.addEventListener('drop', (e) => {
+            const files = e.dataTransfer?.files; if (!files || !files.length) return;
+            document.getElementById('file-input').files = files;
+            document.getElementById('file-input').dispatchEvent(new Event('change'));
+        });
+
+        $('file-input').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            state.file = file || null;
+            $('file-meta').textContent = file ? `${file.name} · ${(file.size / 1024).toFixed(1)} KB` : '';
+            if (!file) return;
+            const form = new FormData();
+            form.append('file', file);
+            const res = await fetch('/api/upload-keywords', { method: 'POST', body: form });
+            const data = await res.json();
+            if (!res.ok || !data.success) {
+                $('validation-errors').textContent = data.detail || 'Parsing failed';
+                $('file-preview').style.display = 'block';
+                $('preview-table').innerHTML = '';
+                return;
+            }
+            state.parsed = data;
+            $('validation-errors').textContent = '';
+            $('file-preview').style.display = 'block';
+            // Use the unified preview system
+            updateFilePreview();
+        });
+
+        async function startJob(keywords) {
+            const config = {
+                // deprecated params removed
+                max_pages: Math.max(1, parseInt($('max_pages').value || '1') || 1),
+                results_per_page: Math.max(10, Math.min(100, parseInt($('results_per_page').value || '100'))),
+                include_organic: $('include_organic').checked,
+                include_paa: $('include_paa').checked,
+                include_related: $('include_related').checked,
+                include_ads: $('include_ads').checked,
+                include_ai_overview: $('include_ai_overview').checked,
+                profile_sites: getSelectedProfileSites()
+            };
+            const payload = { keywords, config };
+            const res = await fetch('/api/start-scraping', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            if (!res.ok) { alert('Failed to start job'); return; }
+            const data = await res.json();
+            state.jobId = data.job_id;
+            state.startTime = Date.now();
+            showProgressBar();
+            updateProgressBar(0, 'Initializing search...', 'pending');
+            pollStatus();
+        }
+
+        async function pollStatus() {
+            if (!state.jobId) return;
+            const res = await fetch(`/api/job-status/${state.jobId}`);
+            if (!res.ok) return;
+            const s = await res.json();
+            const pct = s.progress || 0;
+
+            // Update stats first (without overriding status text)
+            updateProgressStats(s);
+
+            // Update progress bar (this will set the correct status text)
+            updateProgressBar(pct, s.status, s);
+
+            if (s.status === 'completed') {
+                loadResults();
+            } else if (s.status === 'failed') {
+                setTimeout(() => {
+                    alert('Job failed: ' + (s.error_message || ''));
+                }, 500);
+            } else {
+                setTimeout(pollStatus, 1200);
+            }
+        }
+
+        // Enhanced Progress Bar Management
+        function showProgressBar() {
+            $('progress-container').style.display = 'block';
+        }
+
+        function hideProgressBar() {
+            $('progress-container').style.display = 'none';
+        }
+
+        function updateProgressBar(percentage, status, jobData) {
+            const progressFill = $('progress-fill');
+            const progressPercentage = $('progress-percentage');
+            const progressStatusText = $('progress-status-text');
+            const progressStatusIcon = $('progress-status-icon');
+            const progressContainer = $('progress-container');
+            const progressBar = $('progress-bar');
+
+            // Update percentage
+            progressFill.style.width = `${percentage}%`;
+            progressPercentage.textContent = `${Math.round(percentage)}%`;
+
+            // Update status text and icon
+            const statusInfo = getStatusInfo(status, jobData);
+            progressStatusText.textContent = statusInfo.text;
+            progressStatusIcon.textContent = statusInfo.icon;
+            progressStatusIcon.className = `progress-status-icon ${statusInfo.iconClass}`;
+
+            // Update container state
+            progressContainer.className = `progress-container ${statusInfo.containerClass}`;
+
+            // Handle indeterminate state
+            if (statusInfo.indeterminate) {
+                progressBar.classList.add('indeterminate');
+            } else {
+                progressBar.classList.remove('indeterminate');
+            }
+        }
+
+        function updateProgressStats(jobData) {
+            const completed = jobData.completed_keywords || 0;
+            const total = jobData.total_keywords || 0;
+            const results = jobData.results_count || 0;
+            const status = jobData.status || 'unknown';
+            const currentKeyword = jobData.current_keyword;
+            const processingSpeed = jobData.processing_speed;
+            const estimatedRemaining = jobData.estimated_time_remaining;
+
+            $('progress-keywords').textContent = `${completed} / ${total}`;
+            $('progress-results').textContent = results.toLocaleString();
+            $('progress-job-status').textContent = status.charAt(0).toUpperCase() + status.slice(1);
+
+            // Update time information
+            let timeInfo = '';
+            if (state.startTime) {
+                const elapsed = Math.floor((Date.now() - state.startTime) / 1000);
+                const minutes = Math.floor(elapsed / 60);
+                const seconds = elapsed % 60;
+                timeInfo = `Elapsed: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+                // Add estimated time remaining if available
+                if (estimatedRemaining && status === 'running') {
+                    const remainingMinutes = Math.floor(estimatedRemaining / 60);
+                    const remainingSeconds = estimatedRemaining % 60;
+                    timeInfo += ` • ETA: ${remainingMinutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+                }
+
+                // Add processing speed if available
+                if (processingSpeed && status === 'running') {
+                    timeInfo += ` • Speed: ${processingSpeed.toFixed(1)} kw/min`;
+                }
+            }
+            $('progress-time').textContent = timeInfo;
+
+            // Show current keyword if available (only for running status)
+            if (currentKeyword && status === 'running') {
+                const statusText = $('progress-status-text');
+                const currentText = statusText.textContent;
+                if (!currentText.includes(currentKeyword)) {
+                    statusText.textContent = `Processing: "${currentKeyword}"...`;
+                }
+            }
+        }
+
+        function getStatusInfo(status, jobData) {
+            const p = jobData?.progress || 0;
+
+            switch (status) {
+                case 'pending':
+                    return {
+                        text: 'Queueing job...',
+                        icon: '⟳',
+                        iconClass: 'loading',
+                        containerClass: '',
+                        indeterminate: true
+                    };
+                case 'running':
+                    if (p < 5) {
+                        return {
+                            text: 'Preparing environment...',
+                            icon: '⟳',
+                            iconClass: 'loading',
+                            containerClass: '',
+                            indeterminate: true
+                        };
+                    } else if (p < 15) {
+                        return {
+                            text: 'Starting crawler...',
+                            icon: '⟳',
+                            iconClass: 'loading',
+                            containerClass: '',
+                            indeterminate: true
+                        };
+                    } else if (p < 90) {
+                        const completed = jobData?.completed_keywords || 0;
+                        const total = jobData?.total_keywords || 0;
+                        return {
+                            text: `Fetching results (${completed}/${total} keywords)...`,
+                            icon: '⟳',
+                            iconClass: 'loading',
+                            containerClass: '',
+                            indeterminate: false
+                        };
+                    } else {
+                        return {
+                            text: 'Finalizing output...',
+                            icon: '⟳',
+                            iconClass: 'loading',
+                            containerClass: '',
+                            indeterminate: false
+                        };
+                    }
+                case 'completed':
+                    return {
+                        text: 'Extraction completed successfully!',
+                        icon: '✓',
+                        iconClass: 'success',
+                        containerClass: 'success',
+                        indeterminate: false
+                    };
+                case 'failed':
+                    return {
+                        text: `Extraction failed: ${jobData?.error_message || 'Unknown error'}`,
+                        icon: '✗',
+                        iconClass: 'error',
+                        containerClass: 'error',
+                        indeterminate: false
+                    };
+                default:
+                    return {
+                        text: 'Ready to start...',
+                        icon: '⟳',
+                        iconClass: 'loading',
+                        containerClass: '',
+                        indeterminate: false
+                    };
+            }
+        }
+
+        function setIndeterminate(isIndeterminate) {
+            const bar = document.getElementById('progress-bar');
+            if (!bar) return;
+            if (isIndeterminate) bar.classList.add('indeterminate'); else bar.classList.remove('indeterminate');
+        }
+
+        function deriveStageFromStatus(s) {
+            // Map backend progress and logs to user-friendly stages
+            // Heuristic mapping by percentage and known phases
+            const p = s.progress || 0;
+            if (s.status === 'pending') return { label: 'Queueing job…', indeterminate: true };
+            if (s.status === 'running') {
+                if (p < 5) return { label: 'Preparing environment… (pulling image, starting container)', indeterminate: true };
+                if (p < 15) return { label: 'Starting crawler…', indeterminate: true };
+                // Show current keyword if provided by backend in future
+                if (p < 90) return { label: `Scraping keywords… ${s.completed_keywords || 0}/${s.total_keywords || 0}`, indeterminate: false };
+                return { label: 'Finalizing results…', indeterminate: false };
+            }
+            if (s.status === 'completed') return { label: 'Completed', indeterminate: false };
+            if (s.status === 'failed') return { label: 'Failed', indeterminate: false };
+            return { label: '', indeterminate: false };
+        }
+
+        async function loadResults() {
+            const res = await fetch(`/api/job-results/${state.jobId}`);
+            if (!res.ok) return;
+            const data = await res.json();
+            state.results = Array.isArray(data.results) ? data.results : [];
+            setExportsEnabled(state.results.length > 0);
+
+            // Show Results section only if there are results
+            if (state.results.length > 0) {
+                $('results-section').style.display = 'block';
+            }
+
+            renderResults();
+        }
+
+        function renderResults() {
+            const q = ($('filter-query').value || '').toLowerCase();
+            const flattened = flattenOrganic(state.results);
+            const filtered = flattened.filter(entry => entryMatchesQuery(entry, q));
+            const start = (state.page - 1) * state.perPage; const end = start + state.perPage;
+            const pageItems = filtered.slice(start, end);
+            const list = $('results-list'); list.innerHTML = '';
+            if (pageItems.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'muted';
+                empty.textContent = flattened.length === 0 ? 'No results yet.' : 'No results match the filter.';
+                list.appendChild(empty);
+            }
+            pageItems.forEach(({ item, result }) => {
+                const el = document.createElement('div'); el.className = 'result-card';
+                const sq = item.searchQuery || {};
+                const term = sq.term || '';
+                const page = sq.page || item.page || 1;
+                const device = '';
+                const country = '';
+                const language = '';
+                const title = result.title || '';
+                const url = result.url || result.link || '';
+                const desc = result.description || result.snippet || '';
+                const pos = result.position || '';
+                el.innerHTML = `
+                    <div class="result-rank muted">#${pos} · organic</div>
+                    <h3 class="result-title"><a href="${escapeAttr(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(title || url)}</a></h3>
+                    <div class="result-url">${escapeHtml(url)}</div>
+                    <div class="result-snippet">${escapeHtml(desc)}</div>
+                    <div class="result-meta">${escapeHtml(term)} · page ${page}</div>
+                `;
+                list.appendChild(el);
+            });
+            const totalPages = Math.max(1, Math.ceil(filtered.length / state.perPage));
+            $('page-indicator').textContent = `Page ${state.page} / ${totalPages}`;
+        }
+
+        function flattenOrganic(items) {
+            const out = [];
+            for (const item of items || []) {
+                const organic = Array.isArray(item.organicResults) ? item.organicResults : [];
+                for (const result of organic) out.push({ item, result });
+            }
+            return out;
+        }
+
+        function entryMatchesQuery(entry, q) {
+            if (!q) return true;
+            try {
+                const item = entry.item || {};
+                const result = entry.result || {};
+                const term = String((item.searchQuery && item.searchQuery.term) || '').toLowerCase();
+                const title = String(result.title || '').toLowerCase();
+                const url = String(result.url || result.link || '').toLowerCase();
+                return term.includes(q) || title.includes(q) || url.includes(q);
+            } catch (_) { return false; }
+        }
+
+        function escapeHtml(s) {
+            return String(s)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        }
+        function escapeAttr(s) {
+            return String(s)
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        }
+
+        $('filter-query').addEventListener('input', () => { state.page = 1; renderResults(); });
+        $('prev-page').addEventListener('click', () => { state.page = Math.max(1, state.page - 1); renderResults(); });
+        $('next-page').addEventListener('click', () => { const q = ($('filter-query').value || '').toLowerCase(); const flattened = flattenOrganic(state.results); const filtered = flattened.filter(entry => entryMatchesQuery(entry, q)); const totalPages = Math.max(1, Math.ceil(filtered.length / state.perPage)); state.page = Math.min(totalPages, state.page + 1); renderResults(); });
+
+        $('run-single').addEventListener('click', () => {
+            const queryText = $('manual-query').value.trim();
+            if (!queryText) {
+                alert('Enter a query or paste JSON data');
+                return;
+            }
+
+            // Try to parse as JSON first
+            try {
+                const jsonData = JSON.parse(queryText);
+                if (jsonData.keywords && Array.isArray(jsonData.keywords)) {
+                    // It's JSON with keywords array
+                    startJob(jsonData.keywords);
+                    return;
+                }
+            } catch (e) {
+                // Not valid JSON, treat as single query
+            }
+
+            // Treat as single query (split by newlines for multiple queries)
+            const queries = queryText.split('\n').filter(q => q.trim()).map(q => q.trim());
+            if (queries.length === 0) {
+                alert('Enter a valid query');
+                return;
+            }
+            startJob(queries);
+        });
+        $('start-batch').addEventListener('click', () => {
+            if (state.parsed?.keywords?.length) {
+                startJob(state.parsed.keywords);
+            } else {
+                const queryText = $('manual-query').value.trim();
+                if (queryText) {
+                    // Try to parse as JSON first
+                    try {
+                        const jsonData = JSON.parse(queryText);
+                        if (jsonData.keywords && Array.isArray(jsonData.keywords)) {
+                            startJob(jsonData.keywords);
+                            return;
+                        }
+                    } catch (e) {
+                        // Not valid JSON, treat as single query
+                    }
+
+                    // Treat as single query (split by newlines for multiple queries)
+                    const queries = queryText.split('\n').filter(q => q.trim()).map(q => q.trim());
+                    if (queries.length > 0) {
+                        startJob(queries);
+                        return;
+                    }
+                }
+                alert('Upload a file or enter a query');
+            }
+        });
+        $('clear').addEventListener('click', () => {
+            state.file = null;
+            state.parsed = null;
+            state.jobId = null;
+            state.results = [];
+            state.page = 1;
+            state.startTime = null;
+            $('file-input').value = '';
+            $('file-preview').style.display = 'none';
+            $('preview-table').innerHTML = '';
+            $('validation-errors').textContent = '';
+            $('manual-query').value = '';
+            hideProgressBar();
+            $('results-list').innerHTML = '';
+            $('filter-query').value = '';
+            $('page-indicator').textContent = 'Page 1';
+
+            // Hide Results section when clearing
+            $('results-section').style.display = 'none';
+        });
+
+        async function exportFormat(fmt) {
+            if (!state.jobId) { alert('No job yet'); return; }
+            const form = new FormData(); form.append('format', fmt);
+            const res = await fetch(`/api/export-results/${state.jobId}`, { method: 'POST', body: form });
+            const data = await res.json(); if (!res.ok || !data.success) { alert(data.detail || 'Export failed'); return; }
+            const a = document.createElement('a'); a.href = data.download_url; a.download = data.filename; document.body.appendChild(a); a.click(); a.remove();
+        }
+        $('export-json').addEventListener('click', () => exportFormat('json'));
+        $('export-csv').addEventListener('click', () => exportFormat('csv'));
+        $('export-xlsx').addEventListener('click', () => exportFormat('xlsx'));
+        function setExportsEnabled(enabled) {
+            ['export-json', 'export-csv', 'export-xlsx'].forEach(id => { const btn = $(id); btn.disabled = !enabled; btn.style.opacity = enabled ? '1' : '0.6'; });
+        }
+        setExportsEnabled(false);
+
+        // Quota Error Handling Functions
+        function showQuotaError(quotaErrorData) {
+            const container = document.getElementById('quota-error-container');
+            const section = document.getElementById('quota-error-section');
+
+            if (!quotaErrorData || !container || !section) return;
+
+            const timestamp = quotaErrorData.occurred_at ?
+                new Date(quotaErrorData.occurred_at).toLocaleString() :
+                new Date().toLocaleString();
+
+            const quotaLimit = quotaErrorData.quota_limit || 'Unknown';
+            const quotaMetric = quotaErrorData.quota_metric || 'queries';
+            const affectedKeyword = quotaErrorData.affected_keyword || 'Unknown';
+            const helpLinks = quotaErrorData.help_links || [];
+
+            // Check if keyword is very long (more than 80 characters)
+            const isLongKeyword = affectedKeyword.length > 80;
+
+            container.innerHTML = `
+                <div class="quota-error">
+                    <div class="quota-error-timestamp">${timestamp}</div>
+                    <div class="quota-error-header">
+                        <div class="quota-error-icon">⚠</div>
+                        <h3 class="quota-error-title">Daily Quota Limit Reached</h3>
+                    </div>
+                    <p class="quota-error-message">
+                        ${quotaErrorData.message || 'Google CSE daily query limit has been reached. Please try again tomorrow or use a new API key.'}
+                    </p>
+                    
+                    <div class="quota-error-details">
+                        <div class="quota-error-detail-item">
+                            <span class="quota-error-detail-label">Quota Limit:</span>
+                            <span class="quota-error-detail-value">${quotaLimit} ${quotaMetric}/day</span>
+                        </div>
+                        <div class="quota-error-detail-item">
+                            <span class="quota-error-detail-label">Affected Keyword:</span>
+                            <span class="quota-error-detail-value ${isLongKeyword ? 'long-keyword' : ''}" title="${affectedKeyword}">"${affectedKeyword}"</span>
+                        </div>
+                        <div class="quota-error-detail-item">
+                            <span class="quota-error-detail-label">Error Type:</span>
+                            <span class="quota-error-detail-value">${quotaErrorData.error_type || 'quota_exceeded'}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="quota-error-actions">
+                        <button class="quota-error-action" onclick="showTokenManagement()" id="change-api-key-btn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                <circle cx="12" cy="16" r="1"></circle>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            </svg>
+                            Change API Key
+                        </button>
+                        <button class="quota-error-action secondary" onclick="hideQuotaError()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                            Dismiss
+                        </button>
+                    </div>
+                    
+                    ${helpLinks.length > 0 ? `
+                        <div class="quota-error-help-links">
+                            <div class="quota-error-help-links-title">Helpful Links:</div>
+                            <ul class="quota-error-help-links-list">
+                                ${helpLinks.map(link => `
+                                    <li>
+                                        <a href="${link}" target="_blank" rel="noopener noreferrer">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                                <polyline points="15,3 21,3 21,9"></polyline>
+                                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                                            </svg>
+                                            ${getLinkDescription(link)}
+                                        </a>
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+
+            section.style.display = 'block';
+
+            // Add event listener to the Change API Key button
+            const changeBtn = document.getElementById('change-api-key-btn');
+            if (changeBtn) {
+                changeBtn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    showTokenManagement();
+                });
+            }
+
+            // Scroll to the quota error section
+            section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function hideQuotaError() {
+            const section = document.getElementById('quota-error-section');
+            if (section) {
+                section.style.display = 'none';
+            }
+        }
+
+        function clearJobState() {
+            // Clear job state
+            state.jobId = null;
+            state.isRunning = false;
+
+            // Hide progress container
+            const progressContainer = document.getElementById('progress-container');
+            if (progressContainer) {
+                progressContainer.style.display = 'none';
+            }
+
+            // Hide results section and list
+            const resultsSection = document.getElementById('results-section');
+            if (resultsSection) {
+                resultsSection.style.display = 'none';
+            }
+
+            const resultsList = document.getElementById('results-list');
+            if (resultsList) {
+                resultsList.style.display = 'none';
+            }
+
+            // Reset progress elements
+            const progressTitle = document.getElementById('progress-title');
+            const progressPercentage = document.getElementById('progress-percentage');
+            const progressFill = document.getElementById('progress-fill');
+            const progressStatusIcon = document.getElementById('progress-status-icon');
+            const progressStatusText = document.getElementById('progress-status-text');
+            const progressKeywords = document.getElementById('progress-keywords');
+            const progressResults = document.getElementById('progress-results');
+            const progressJobStatus = document.getElementById('progress-job-status');
+            const progressTime = document.getElementById('progress-time');
+
+            if (progressTitle) progressTitle.textContent = 'Extraction Progress';
+            if (progressPercentage) progressPercentage.textContent = '0%';
+            if (progressFill) progressFill.style.width = '0%';
+            if (progressStatusIcon) {
+                progressStatusIcon.className = 'progress-status-icon';
+                progressStatusIcon.textContent = '';
+            }
+            if (progressStatusText) progressStatusText.textContent = 'Ready to start extraction...';
+            if (progressKeywords) progressKeywords.textContent = '0 / 0';
+            if (progressResults) progressResults.textContent = '0';
+            if (progressJobStatus) progressJobStatus.textContent = 'Ready';
+            if (progressTime) progressTime.textContent = 'Elapsed: 0:00';
+
+            // Reset progress container class
+            if (progressContainer) {
+                progressContainer.className = 'progress-container';
+            }
+
+        }
+
+        function resetUploadForm() {
+            // Clear the file input
+            const fileInput = document.getElementById('file-input');
+            if (fileInput) {
+                fileInput.value = '';
+            }
+
+            // Clear the preview
+            const preview = document.getElementById('preview');
+            if (preview) {
+                preview.innerHTML = '';
+            }
+
+            // Reset the upload button
+            const uploadBtn = document.getElementById('upload-btn');
+            if (uploadBtn) {
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = 'Start Extraction';
+            }
+
+            // Clear any error messages
+            const errorMsg = document.getElementById('error-msg');
+            if (errorMsg) {
+                errorMsg.textContent = '';
+                errorMsg.style.display = 'none';
+            }
+
+        }
+
+        async function showTokenManagement() {
+
+            // Add visual feedback to the button
+            const changeBtn = document.getElementById('change-api-key-btn');
+
+            if (changeBtn) {
+                const originalText = changeBtn.innerHTML;
+                changeBtn.innerHTML = `
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="animate-spin">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M12 6v6l4 2"></path>
+                    </svg>
+                    Processing...
+                `;
+                changeBtn.disabled = true;
+            }
+
+            // Clear previous job state and progress
+            clearJobState();
+            resetUploadForm();
+
+            hideQuotaError();
+
+            try {
+                // Clear existing token values from the form
+                $('google-api-key').value = '';
+                $('google-cx').value = '';
+
+                // Clear temporary tokens from backend
+                const clearResponse = await fetch('/api/clear-tokens', { method: 'DELETE' });
+                const clearResult = await clearResponse.json();
+
+                if (clearResult.success) {
+                } else {
+                    console.warn('Failed to clear temporary tokens:', clearResult.message);
+                }
+
+                // Show the token management card
+                const tokenCard = document.getElementById('token-card');
+                const uploadCard = document.getElementById('upload-card');
+                const resultsSection = document.getElementById('results-section');
+                if (tokenCard && uploadCard) {
+                    tokenCard.style.display = 'block';
+                    uploadCard.style.display = 'none';
+                    if (resultsSection) {
+                        resultsSection.style.display = 'none';
+                    }
+
+                    // Update token status to show quota exceeded message
+                    updateTokenStatusWithQuotaMessage();
+
+                    // Focus on Google API key input
+                    setTimeout(() => {
+                        $('google-api-key').focus();
+                        $('google-api-key').select();
+                    }, 100);
+
+                    // Scroll to token card
+                    tokenCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            } catch (error) {
+                console.error('Failed to clear tokens:', error);
+                // Still show the token management card even if clearing fails
+                const tokenCard = document.getElementById('token-card');
+                const uploadCard = document.getElementById('upload-card');
+                const resultsSection = document.getElementById('results-section');
+                if (tokenCard && uploadCard) {
+                    tokenCard.style.display = 'block';
+                    uploadCard.style.display = 'none';
+                    if (resultsSection) {
+                        resultsSection.style.display = 'none';
+                    }
+                    updateTokenStatusWithQuotaMessage();
+                    tokenCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            } finally {
+                // Restore button state
+                if (changeBtn) {
+                    changeBtn.innerHTML = originalText;
+                    changeBtn.disabled = false;
+                }
+            }
+        }
+
+        function updateTokenStatusWithQuotaMessage() {
+            const status = $('token-status');
+            status.innerHTML = '⚠ <strong>Quota exceeded detected!</strong> Please enter a new Google API key below.';
+            status.style.color = '#dc2626';
+            status.style.fontWeight = '500';
+            status.style.backgroundColor = '#fef2f2';
+            status.style.padding = '8px 12px';
+            status.style.borderRadius = '6px';
+            status.style.border = '1px solid #fecaca';
+        }
+
+        function getLinkDescription(url) {
+            if (url.includes('cloud.google.com/docs/quotas')) {
+                return 'Request Higher Quota Limit';
+            } else if (url.includes('console.cloud.google.com')) {
+                return 'Google Cloud Console';
+            } else if (url.includes('cse.google.com')) {
+                return 'Google Custom Search Engine';
+            } else {
+                return 'Learn More';
+            }
+        }
+
+
+        // Add event listener as backup for the Change API Key button
+        document.addEventListener('DOMContentLoaded', function () {
+            const changeBtn = document.getElementById('change-api-key-btn');
+            if (changeBtn) {
+                changeBtn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    showTokenManagement();
+                });
+            }
+        });
+
+        // Enhanced pollStatus to check for quota errors
+        const originalPollStatus = pollStatus;
+        pollStatus = async function () {
+            if (!state.jobId) return;
+            const res = await fetch(`/api/job-status/${state.jobId}`);
+            if (!res.ok) return;
+            const s = await res.json();
+
+            // Check for quota error in the response
+            if (s.quota_error_display) {
+                showQuotaError(s.quota_error_display);
+            }
+
+            // Call the original pollStatus function
+            return originalPollStatus();
+        };
+    })();
+</script>
+{% endblock %}

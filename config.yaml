@@ -1,0 +1,95 @@
+# Centralized configuration for the Google SERP Data Extractor Tool
+#
+# Best practices:
+# - Keep secrets (API keys/tokens) in environment variables or a private .env file.
+# - This file defines defaults and non-secret behavior. Environment variables override.
+# - Sections: api, search, io, normalization, behavior, logging, caching
+# - Example values are provided in comments; do not commit real secrets.
+
+api:
+  # Provider resolution order. The tool will try them in this sequence when using
+  # a fallback strategy (see behavior.fallback_strategy).
+  provider_order: [google]
+
+  google:
+    # Credentials (DO NOT commit real values). Use env vars:
+    #   GOOGLE_API_KEY, GOOGLE_CSE_CX (or GOOGLE_CX)
+    api_key: null   # example: YOUR_GOOGLE_API_KEY
+    cx: null        # example: your_cse_cx_id
+    base_url: https://www.googleapis.com/customsearch/v1
+
+    # If true and locale hints are provided, adds lr=lang_xx and gl=cc
+    # You can also override via env: APPLY_LOCALE_HINTS=true
+    apply_locale_hints: false
+
+
+search:
+  # Defaults for searches (can be overridden per request)
+  results_per_page: 10      # 1..10 for Google CSE
+  max_pages: 3              # number of pages to fetch (allowed: 1–3)
+  country: null             # e.g., us, vn (used as gl where supported)
+  language: null            # e.g., en, vi (used as lr where supported)
+  device: desktop           # desktop | mobile (provider-dependent)
+  safe_search: null         # provider-dependent
+  time_range: null          # provider-dependent (e.g., past year)
+
+io:
+  # Supported input and output formats
+  input_types: [json, csv, xlsx]
+  output_formats: [json, csv, xlsx]
+
+  # Where exports are written
+  export_dir: downloads
+
+  # Filename pattern; placeholders: {job} (job id) and {timestamp}
+  filename_pattern: "search_results_{job}_{timestamp}"
+  # Examples:
+  # - search_results_a38a4d39_20250910_163539.xlsx
+
+normalization:
+  # Unified schema for normalized result rows
+  # Note: internal code may include additional fields like displayedUrl, siteLinks
+  unified_schema: [title, url, snippet, position, type]
+
+  # Value to use when a field is missing
+  missing_field_value: null
+
+behavior:
+  # Request-level behavior
+  max_retries: 2               # per request
+  delay_ms: 1000               # delay between keywords to avoid rate limits
+
+  # How to fallback if a provider fails or is not configured
+  # sequential: try provider_order one-by-one
+  # none: do not fallback
+  fallback_strategy: sequential
+
+  # Optional compatibility keys (not required by current code but available):
+  # request_timeout_seconds: 300
+  # max_concurrent_jobs: 5
+
+logging:
+  # Log verbosity: DEBUG | INFO | WARNING | ERROR | CRITICAL
+  level: INFO
+
+  # Log file path (can be overridden by the app logger setup)
+  file: logs/app.log
+
+  # Also print logs to console
+  console: true
+
+caching:
+  # Cache API responses when possible (Google CSE client supports this)
+  enabled: true
+
+  # Directory for cached responses (now managed dynamically by temp_manager)
+  # dir: temp/cse_cache  # This is now handled automatically
+
+  # Cache expiration time in seconds (default 24h)
+  ttl_seconds: 86400
+
+  # Notes:
+  # - The Google CSE client uses on-disk caching keyed by request params.
+  # - Temp directory is now managed automatically and cleaned up on shutdown.
+
+

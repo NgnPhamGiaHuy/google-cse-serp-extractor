@@ -93,3 +93,10 @@ caching:
   # - Temp directory is now managed automatically and cleaned up on shutdown.
 
 
+usage:
+  # Daily request quota for internal usage tracker (counts real HTTP requests)
+  daily_quota: 100
+  # Optional custom path for usage storage (JSON file). Defaults to state/usage.json under project root.
+  # storage_path: state/usage.json
+
+

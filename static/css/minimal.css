@@ -1193,6 +1193,8 @@ details[open] .chevron {
     border-radius: 12px;
     padding: 16px;
     transition: box-shadow .16s ease;
+    content-visibility: auto;
+    contain: content;
     word-wrap: break-word;
     overflow-wrap: break-word;
     hyphens: auto
@@ -1747,28 +1749,7 @@ details[open] .chevron {
     font-family: inherit;
 }
 
-.run-single-btn {
-    align-self: flex-start;
-    padding: 10px 20px;
-    background: var(--accent);
-    color: #fff;
-    border: none;
-    border-radius: var(--radius);
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.16s ease;
-}
-
-.run-single-btn:hover {
-    background: color-mix(in oklab, var(--accent) 90%, #000);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px color-mix(in oklab, var(--accent) 30%, transparent);
-}
-
-.run-single-btn:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 6px color-mix(in oklab, var(--accent) 30%, transparent);
-}
+/* removed run-single button styles */
 
 /* Query Preview Styles */
 .query-preview {
@@ -1899,11 +1880,7 @@ details[open] .chevron {
         padding: 10px;
     }
 
-    .run-single-btn {
-        padding: 12px 20px;
-        font-size: 14px;
-        width: 100%;
-    }
+    /* removed run-single button mobile styles */
 
     /* Mobile file preview adjustments */
     #file-preview {
@@ -1935,5 +1912,45 @@ details[open] .chevron {
 
     to {
         transform: rotate(360deg);
+    }
+}
+
+/* Mobile touch target comfort for icon-only buttons */
+@media (max-width: 600px) {
+
+    .copy-query-btn,
+    #platform-add-btn {
+        min-width: 44px;
+        min-height: 44px;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* Skeleton placeholder style (used when loading results) */
+.skeleton-card {
+    min-height: 96px;
+    border-radius: 12px;
+    background: linear-gradient(90deg, #f3f4f6, #ffffff, #f3f4f6);
+    background-size: 200% 100%;
+    animation: shimmer 1.2s linear infinite;
+    border: 1px solid var(--border);
+}
+
+@keyframes shimmer {
+    from {
+        background-position: 200% 0;
+    }
+
+    to {
+        background-position: -200% 0;
     }
 }

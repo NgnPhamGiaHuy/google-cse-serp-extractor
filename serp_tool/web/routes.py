@@ -21,6 +21,7 @@ from serp_tool.utils.token_manager import token_manager
 from .background import run_scraping_job
 from .helpers import parse_keywords_file, perform_export, save_upload_to_temp
 from .state import job_storage, results_storage
+from serp_tool.utils.usage_tracker import UsageTracker, DailyQuotaExceededError
 
 
 templates = Jinja2Templates(directory="templates")
@@ -64,6 +65,12 @@ async def upload_keywords(file: UploadFile = File(...)):
 async def start_scraping(background_tasks: BackgroundTasks, request: BulkSearchRequest):
     if not request.keywords:
         raise HTTPException(status_code=400, detail="No keywords provided")
+
+    # Check daily quota before starting a job: ensure at least 1 request can be made
+    try:
+        UsageTracker.get_shared().ensure_can_consume(1)
+    except DailyQuotaExceededError as e:
+        raise HTTPException(status_code=429, detail=str(e))
 
     job_id = str(uuid.uuid4())
     job_status = SearchJobStatus(
@@ -273,6 +280,13 @@ async def clear_backup_tokens():
     except Exception as exc:
         app_logger.error(f"Failed to clear backup tokens: {exc}")
         raise HTTPException(status_code=500, detail="Failed to clear backup tokens")
+
+
+@router.get("/api/usage")
+async def get_usage():
+    tracker = UsageTracker.get_shared()
+    snap = tracker.get_snapshot()
+    return {"date": snap.date, "used": snap.used, "quota": snap.quota, "remaining": max(0, snap.quota - snap.used)}
 
 
 @router.get("/api/platform-suggestions")

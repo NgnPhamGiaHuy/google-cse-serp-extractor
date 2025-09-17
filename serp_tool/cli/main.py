@@ -1,4 +1,5 @@
 import asyncio
+import sys
 import click
 from pathlib import Path
 from typing import Optional
@@ -11,9 +12,18 @@ from config import config as app_config
 from serp_tool.logging import cli_logger, setup_root_logging
 
 from .helpers import load_keywords, build_config_from_flags, deduplicate_and_log
+from serp_tool.utils.usage_tracker import UsageTracker, DailyQuotaExceededError
 
 
-@click.command()
+# Root command group
+@click.group()
+def main():
+    """SERP Tool CLI"""
+    pass
+
+
+# Existing scrape command preserved as a subcommand
+@main.command("scrape")
 @click.option('--keywords', '-k', required=True, help='Path to keywords file (JSON, CSV, or Excel)')
 @click.option('--output', '-o', required=True, help='Output file path (JSON, CSV, or Excel)')
 @click.option('--max-pages', '-p', default=None, type=click.IntRange(1), help='Maximum pages to scrape (default from config)')
@@ -24,7 +34,7 @@ from .helpers import load_keywords, build_config_from_flags, deduplicate_and_log
 @click.option('--include-ai-overview/--no-ai-overview', default=False, help='Include AI overview (default: False)')
 @click.option('--profile-site', multiple=True, help='Add profile site filter(s), e.g., --profile-site site:github.com. Defaults to LinkedIn only if none provided.')
 @click.option('--allow-duplicates/--no-allow-duplicates', default=False, help='Allow duplicate queries after normalization (default: no-allow-duplicates)')
-def main(
+def scrape(
     keywords: str,
     output: str,
     max_pages: int,
@@ -122,6 +132,11 @@ def main(
                             f"{keyword}: {len(results)} results",
                             extra={"action": "result_fetch", "status": "success", "keyword": keyword}
                         )
+                    except DailyQuotaExceededError as e:
+                        msg = str(e)
+                        cli_logger.error(msg, extra={"action": "daily_quota", "status": "fail"})
+                        click.echo(f"Error: {msg}", err=True)
+                        raise SystemExit(1)
                     except Exception as e:
                         cli_logger.error(
                             f"Error scraping '{keyword}': {str(e)}",
@@ -168,6 +183,18 @@ def main(
 
     setup_root_logging()
     asyncio.run(run_scraping())
+
+
+@main.command("usage")
+def usage() -> None:
+    """Print today's API request usage summary."""
+    setup_root_logging()
+    tracker = UsageTracker.get_shared()
+    snap = tracker.get_snapshot()
+    click.echo(f"Requests used today: {snap.used} / {snap.quota}")
+    if snap.used >= snap.quota:
+        click.echo("Daily request limit reached. Please try again tomorrow.", err=True)
+        sys.exit(1)
 
 
 if __name__ == '__main__':

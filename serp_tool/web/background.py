@@ -5,6 +5,7 @@ from typing import Any, Dict, List
 
 from models import SearchConfig
 from serp_tool.clients.cse.client import QuotaExceededError
+from serp_tool.utils.usage_tracker import UsageTracker, DailyQuotaExceededError
 from serp_tool.logging import app_logger
 from serp_tool.normalizer import normalize_items
 from serp_tool.scraper import GoogleSerpScraper
@@ -134,7 +135,23 @@ async def run_scraping_job(job_id: str, keywords: List[str], config: SearchConfi
                 if pages < 1:
                     safe_cfg = config.model_copy(update={"max_pages": 1})
 
-                results = await scraper.scrape_keyword(keyword, safe_cfg)
+                try:
+                    results = await scraper.scrape_keyword(keyword, safe_cfg)
+                except DailyQuotaExceededError as e:
+                    job_storage[job_id].quota_exceeded = True
+                    job_storage[job_id].quota_error = {
+                        "error_type": "daily_quota_exceeded",
+                        "message": str(e),
+                        "quota_info": {"quota_limit_value": UsageTracker.get_shared().get_snapshot().quota, "quota_metric": "requests"},
+                        "help_links": [],
+                        "occurred_at": datetime.now().isoformat(),
+                        "keyword": keyword,
+                    }
+                    app_logger.warning(
+                        "Daily quota exceeded in app tracker",
+                        extra={"action": "daily_quota_exceeded", "status": "warning", "query_id": job_id},
+                    )
+                    break
                 normalized = normalize_items(results)
 
                 if hasattr(scraper, "_last_quota_error") and scraper._last_quota_error:

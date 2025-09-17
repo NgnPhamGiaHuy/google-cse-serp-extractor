@@ -1,0 +1,47 @@
+/* Usage Progress Bar styles extracted from templates/index.html */
+.usage-widget {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.usage-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.usage-track {
+    position: relative;
+    height: 10px;
+    background: var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.usage-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #22c55e, #16a34a);
+    transition: width .25s ease;
+}
+
+.usage-label {
+    margin-top: 2px;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+/* States */
+.usage--warn .usage-fill {
+    background: linear-gradient(90deg, #f59e0b, #d97706);
+}
+
+.usage--danger .usage-fill {
+    background: linear-gradient(90deg, #ef4444, #b91c1c);
+}

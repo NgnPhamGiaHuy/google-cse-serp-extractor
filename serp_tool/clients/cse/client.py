@@ -68,15 +68,31 @@ class GoogleCSEClient:
         return False
 
     def _get_with_cache(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        """Fetch a JSON response using a simple on-disk cache."""
+        """Fetch a JSON response using a simple on-disk cache.
+
+        Also integrates the per-day UsageTracker to count ONLY real HTTP requests.
+        """
+        from serp_tool.utils.usage_tracker import UsageTracker, DailyQuotaExceededError
+
         path = build_cache_key(self.cache_dir, params)
         cached = read_cache(path, self.cache_ttl)
         if cached is not None:
             return cached
         try:
+            # Check daily quota before making a real HTTP call
+            tracker = UsageTracker.get_shared()
+            tracker.ensure_can_consume(1)
             data = http_get_json(self.BASE_URL, params, timeout=max(5, config.request_timeout))
+            # Count one real HTTP request
+            tracker.increment(1)
             write_cache(path, data)
             return data
+        except DailyQuotaExceededError as e:
+            scraper_logger.warning(
+                str(e),
+                extra={"action": "daily_quota_exceeded", "status": "fail"},
+            )
+            raise
         except HTTPError as e:
             is_quota_error, quota_info = is_quota_exceeded_error(e)
             if is_quota_error:

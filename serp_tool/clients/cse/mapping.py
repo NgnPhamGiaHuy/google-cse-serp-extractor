@@ -1,7 +1,8 @@
-from typing import Dict, Any, List
+from typing import Any, Dict, List
 
 
 def map_cse_item_to_search_result(cse_item: Dict[str, Any], position: int) -> Dict[str, Any]:
+    """Normalize a Google CSE item into the internal search result schema."""
     title = cse_item.get("title") or ""
     link = cse_item.get("link") or ""
     snippet = cse_item.get("snippet") or cse_item.get("htmlSnippet") or ""
@@ -32,5 +33,4 @@ def map_cse_item_to_search_result(cse_item: Dict[str, Any], position: int) -> Di
         "siteLinks": site_links,
         "metatags": metatags or None,
     }
-
 

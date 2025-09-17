@@ -6,6 +6,7 @@ from serp_tool.handlers.followers import _extract_followers_from_record
 
 
 def _flatten_common(item: Dict[str, Any]) -> Dict[str, Any]:
+    """Extract common fields shared by all flattened rows."""
     sq = item.get('searchQuery') or {}
     term = sq.get('term') or item.get('query') or item.get('searchTerm') or ''
     page = sq.get('page') or item.get('page') or 1
@@ -18,6 +19,7 @@ def _flatten_common(item: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _flatten_organic(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Flatten organic results into row dictionaries."""
     rows: List[Dict[str, Any]] = []
     for item in items or []:
         common = _flatten_common(item)
@@ -43,6 +45,7 @@ def _flatten_organic(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
 
 def _flatten_paa(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Flatten People Also Ask entries."""
     rows: List[Dict[str, Any]] = []
     for item in items or []:
         common = _flatten_common(item)
@@ -58,6 +61,7 @@ def _flatten_paa(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
 
 def _flatten_related(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Flatten related queries into row dictionaries."""
     rows: List[Dict[str, Any]] = []
     for item in items or []:
         common = _flatten_common(item)
@@ -69,6 +73,7 @@ def _flatten_related(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
 
 def _flatten_paid(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Flatten paid ad results into row dictionaries."""
     rows: List[Dict[str, Any]] = []
     for item in items or []:
         common = _flatten_common(item)
@@ -86,6 +91,7 @@ def _flatten_paid(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
 
 def _flatten_ai_overview(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Flatten AI overview content as JSON strings."""
     rows: List[Dict[str, Any]] = []
     for item in items or []:
         common = _flatten_common(item)

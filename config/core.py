@@ -1,19 +1,18 @@
 import os
-from pathlib import Path
-from typing import Any, Dict, Optional
-from dotenv import load_dotenv, dotenv_values
 import yaml
+
+from pathlib import Path
+from dotenv import load_dotenv
+from typing import Any, Dict, Optional
 
 
 def _bool_env(value: Optional[str], default: bool = False) -> bool:
-    """Parse common boolean-like env values."""
     if value is None:
         return default
     return value.lower() in ("true", "1", "yes", "on")
 
 
 def _deep_merge(a: Dict[str, Any], b: Dict[str, Any]) -> Dict[str, Any]:
-    """Recursively merge dict b into a, returning a new dict."""
     out = dict(a)
     for k, v in (b or {}).items():
         if isinstance(v, dict) and isinstance(out.get(k), dict):
@@ -24,24 +23,13 @@ def _deep_merge(a: Dict[str, Any], b: Dict[str, Any]) -> Dict[str, Any]:
 
 
 class Config:
-    """Application configuration with centralized YAML file and environment variable support.
-
-    Resolution order (lowest to highest precedence):
-    1) Built-in defaults
-    2) config.yaml (if present)
-    3) .env / .env.local files
-    4) Process environment variables
-    """
-
     def __init__(self):
         self._project_root = Path(__file__).parent.parent
         self._data: Dict[str, Any] = {}
         self._load_environment_files()
         self._load_yaml()
 
-    # ---------- Loading ----------
     def _load_environment_files(self) -> None:
-        """Load environment variables from .env and .env.local (if present)."""
         env_file = self._project_root / ".env"
         if env_file.exists():
             load_dotenv(env_file, override=True)
@@ -50,7 +38,6 @@ class Config:
             load_dotenv(env_local_file, override=True)
 
     def _load_yaml(self) -> None:
-        """Load config.yaml if present and apply defaults and env overrides."""
         cfg_path = self._project_root / "config.yaml"
         if cfg_path.exists():
             try:
@@ -71,7 +58,7 @@ class Config:
             },
             "search": {
                 "results_per_page": 10,
-                "max_pages": 1,
+                "max_pages": 10,
                 "country": None,
                 "language": None,
                 "safe_search": None,
@@ -99,14 +86,13 @@ class Config:
             },
             "caching": {
                 "enabled": True,
-                "dir": None,  # Will be set dynamically by temp_manager
+                "dir": None,
                 "ttl_seconds": int(os.getenv("CACHE_TTL_SECONDS", "86400")),
             },
         }
 
         merged = _deep_merge(defaults, file_cfg)
 
-        # Apply env overrides for secrets and common toggles
         merged.setdefault("api", {}).setdefault("google", {})["api_key"] = os.getenv("GOOGLE_API_KEY") or merged["api"]["google"].get("api_key")
         merged["api"]["google"]["cx"] = os.getenv("GOOGLE_CSE_CX") or os.getenv("GOOGLE_CX") or merged["api"]["google"].get("cx")
 
@@ -121,7 +107,6 @@ class Config:
 
         self._data = merged
 
-    # ---------- Helpers ----------
     def _get(self, path: str, default: Any = None) -> Any:
         cur: Any = self._data
         for part in path.split('.'):
@@ -132,11 +117,8 @@ class Config:
                 return default
         return cur
 
-    # ---------- Backward-compatible properties ----------
-
     @property
     def google_api_key(self) -> Optional[str]:
-        # Try token manager first, then fall back to config
         try:
             from serp_tool.utils.token_manager import token_manager
             token = token_manager.get_token('google_api_key')
@@ -148,7 +130,6 @@ class Config:
 
     @property
     def google_cx(self) -> Optional[str]:
-        # Try token manager first, then fall back to config
         try:
             from serp_tool.utils.token_manager import token_manager
             token = token_manager.get_token('google_cx')
@@ -178,11 +159,9 @@ class Config:
     def apply_locale_hints(self) -> bool:
         return bool(self._get("api.google.apply_locale_hints", False))
 
-    # ---------- New structured getters ----------
     @property
     def google_base_url(self) -> str:
         return self._get("api.google.base_url", "https://www.googleapis.com/customsearch/v1")
-
 
     @property
     def provider_order(self) -> list:
@@ -212,7 +191,6 @@ class Config:
     def caching_settings(self) -> Dict[str, Any]:
         return dict(self._get("caching", {}))
 
-    # ---------- Validation & Diagnostics ----------
     def validate_required(self) -> None:
         has_google = bool(self.google_api_key and self.google_cx)
         if not has_google:

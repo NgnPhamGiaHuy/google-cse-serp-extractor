@@ -1,18 +1,18 @@
+import hashlib
 import json
 import time
-import hashlib
 
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any, Dict, Optional
 
 
 def build_cache_key(cache_dir: Path, params: Dict[str, Any]) -> Path:
     payload = json.dumps(params, sort_keys=True, ensure_ascii=False)
-    h = hashlib.sha256(payload.encode("utf-8")).hexdigest()
-    return cache_dir / f"{h}.json"
+    digest = hashlib.sha256(payload.encode("utf-8")).hexdigest()
+    return cache_dir / f"{digest}.json"
 
 
-def read_cache(path: Path, ttl_seconds: int) -> Dict[str, Any] | None:
+def read_cache(path: Path, ttl_seconds: int) -> Optional[Dict[str, Any]]:
     now = int(time.time())
     if path.exists():
         try:
@@ -31,5 +31,4 @@ def write_cache(path: Path, data: Dict[str, Any]) -> None:
             json.dump(data, f, ensure_ascii=False)
     except Exception:
         pass
-
 

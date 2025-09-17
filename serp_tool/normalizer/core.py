@@ -1,18 +1,18 @@
 from typing import Any, Dict, List, Optional
 
 from serp_tool.logging import scraper_logger
-from schema import UnifiedItem, OrganicResult, PeopleAlsoAskItem, AdItem, empty_unified_item
+from schema import AdItem, OrganicResult, PeopleAlsoAskItem, UnifiedItem, empty_unified_item
 
 from serp_tool.normalizer.helpers import (
     coerce_int,
+    extract_followers_from_text,
     is_truncated,
     pick_longer_text,
-    extract_followers_from_text,
 )
 
 
 def normalize_search_query(obj: Dict[str, Any]) -> Dict[str, Any]:
-    """Normalize the search query section for Google CSE compatibility."""
+    """Normalize `searchQuery` structure from various input shapes."""
     sq = obj.get("searchQuery") or {}
     return {
         "term": sq.get("term") or obj.get("query") or obj.get("searchTerm"),
@@ -21,7 +21,7 @@ def normalize_search_query(obj: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def normalize_organic(obj: Dict[str, Any]) -> List[OrganicResult]:
-    """Normalize organic results; infer connections from LinkedIn snippets/metatags."""
+    """Normalize organic results including optional LinkedIn follower data."""
     records = obj.get("organicResults") or obj.get("searchResults") or []
     out: List[OrganicResult] = []
     for r in records:
@@ -60,14 +60,15 @@ def normalize_organic(obj: Dict[str, Any]) -> List[OrganicResult]:
             "connectionsCount": connections_count,
         }
         if connections_text is not None:
-            result["connections_text"] = connections_text  # type: ignore
+            result["connections_text"] = connections_text
         if connections_count is not None:
-            result["connections_count"] = connections_count  # type: ignore
+            result["connections_count"] = connections_count
         out.append(result)
     return out
 
 
 def normalize_paa(obj: Dict[str, Any]) -> List[PeopleAlsoAskItem]:
+    """Normalize People Also Ask items."""
     paa = obj.get("peopleAlsoAsk") or obj.get("paa") or []
     out: List[PeopleAlsoAskItem] = []
     for p in paa:
@@ -80,11 +81,13 @@ def normalize_paa(obj: Dict[str, Any]) -> List[PeopleAlsoAskItem]:
 
 
 def normalize_related(obj: Dict[str, Any]) -> List[Any]:
+    """Pass-through normalization for related searches."""
     related = obj.get("relatedSearches") or obj.get("relatedQueries") or []
     return related
 
 
 def normalize_ads(obj: Dict[str, Any]) -> List[AdItem]:
+    """Normalize paid ad items."""
     ads = obj.get("ads") or obj.get("paidResults") or []
     out: List[AdItem] = []
     for ad in ads:
@@ -99,14 +102,12 @@ def normalize_ads(obj: Dict[str, Any]) -> List[AdItem]:
 
 
 def normalize_ai_overview(obj: Dict[str, Any]) -> Optional[Any]:
+    """Return AI overview object if present."""
     return obj.get("aiOverview") or obj.get("ai_overview")
 
 
 def normalize_item(raw: Dict[str, Any]) -> UnifiedItem:
-    """Normalize a raw item into the unified schema.
-
-    Preserves logging and error handling from the original implementation.
-    """
+    """Normalize a raw scraped item into the unified schema."""
     try:
         unified: UnifiedItem = empty_unified_item()
         unified["searchQuery"] = normalize_search_query(raw)
@@ -130,7 +131,8 @@ def normalize_item(raw: Dict[str, Any]) -> UnifiedItem:
 
 
 def normalize_items(raw_items: List[Dict[str, Any]]) -> List[UnifiedItem]:
-    """Normalize a list of raw items into unified schema items."""
+    """Normalize a list of raw items to the unified schema list."""
     return [normalize_item(it) for it in (raw_items or [])]
+
 
 

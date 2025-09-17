@@ -141,13 +141,12 @@ Navigate to `http://localhost:8000` in your browser for the interactive interfac
 python cli.py --keywords "python web scraping" --output results.json
 
 # Multiple keywords from file
-python cli.py --keywords keywords.csv --output results.xlsx --max-pages 3
+python cli.py --keywords keywords.csv --output results.xlsx --max-pages 10
 
 # Advanced filtering with platform targeting
 python cli.py --keywords keywords.json --output results.csv \
   --profile-site "site:linkedin.com/in" \
-  --profile-site "site:github.com" \
-  --results-per-page 50
+  --profile-site "site:github.com"
 ```
 
 #### Advanced Options
@@ -157,8 +156,7 @@ python cli.py --keywords keywords.json --output results.csv \
 python cli.py \
   --keywords data/keywords.xlsx \
   --output results/search_results_$(date +%Y%m%d).json \
-  --max-pages 3 \
-  --results-per-page 100 \
+  --max-pages 10 \
   --include-organic \
   --profile-site "site:linkedin.com/in" \
   --profile-site "site:twitter.com" \
@@ -169,8 +167,7 @@ python cli.py \
 
 | Parameter | Description | Default | Range |
 |-----------|-------------|---------|-------|
-| `--max-pages` | Maximum pages to scrape per keyword | 3 | 1-10 |
-| `--results-per-page` | Results per page | 10 | 10-100 |
+| `--max-pages` | Maximum pages to scrape per keyword | 10 | >=1 |
 | `--include-organic` | Include organic search results | True | Boolean |
 | `--include-paa` | Include "People Also Ask" results | False | Boolean |
 | `--include-related` | Include related search suggestions | False | Boolean |
@@ -204,7 +201,7 @@ api:
 
 search:
   results_per_page: 10
-  max_pages: 3
+  max_pages: 10
   country: null
   language: null
   device: desktop

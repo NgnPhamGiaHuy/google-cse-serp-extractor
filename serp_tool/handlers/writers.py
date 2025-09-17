@@ -1,16 +1,16 @@
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 import pandas as pd
 
 from serp_tool.logging import files_logger
 from serp_tool.handlers.flatteners import (
+    _flatten_ai_overview,
     _flatten_organic,
     _flatten_paa,
-    _flatten_related,
     _flatten_paid,
-    _flatten_ai_overview,
+    _flatten_related,
 )
 
 
@@ -82,7 +82,7 @@ def export_results_to_excel(results: List[Dict[str, Any]], file_path: Union[str,
         pass
 
 
-def export_results(results: List[Dict[str, Any]], file_path: Union[str, Path], format_type: str = None) -> None:
+def export_results(results: List[Dict[str, Any]], file_path: Union[str, Path], format_type: Optional[str] = None) -> None:
     file_path = Path(file_path)
     if format_type:
         format_type = format_type.lower()
@@ -97,5 +97,4 @@ def export_results(results: List[Dict[str, Any]], file_path: Union[str, Path], f
         export_results_to_excel(results, file_path)
     else:
         raise ValueError(f"Unsupported export format: {format_type}")
-
 

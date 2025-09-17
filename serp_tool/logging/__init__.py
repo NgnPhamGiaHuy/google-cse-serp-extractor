@@ -4,7 +4,7 @@ from .queueing import ensure_queue_listener
 from .adapter import ContextLoggerAdapter
 from .core import setup_root_logging, get_logger, get_quota_logger
 
-# Pre-created loggers matching previous module-level convenience loggers
+
 app_logger = get_logger("app")
 scraper_logger = get_logger("scraper")
 files_logger = get_logger("files")

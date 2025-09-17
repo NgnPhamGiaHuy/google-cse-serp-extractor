@@ -1,16 +1,17 @@
 from datetime import datetime
-from typing import Optional, List
 from pydantic import BaseModel
+from typing import Optional, List
 
 from .search_config import SearchConfig
 
 
 class SearchResult(BaseModel):
-    """Individual search result"""
+    """Represents a single search result item."""
+
     keyword: str
     position: int
     page: int
-    type: str  # 'organic', 'paa', 'related', 'ads', 'aiOverview'
+    type: str
     title: str
     url: str
     snippet: Optional[str] = None
@@ -19,7 +20,8 @@ class SearchResult(BaseModel):
 
 
 class BulkSearchRequest(BaseModel):
-    """Request for bulk search operation"""
+    """Request schema for bulk search operations."""
+
     keywords: List[str]
     config: SearchConfig
 

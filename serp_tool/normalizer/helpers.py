@@ -3,7 +3,7 @@ import re
 
 
 def coerce_int(value: Any) -> Optional[int]:
-    """Best-effort convert a value to int; returns None on failure."""
+    """Coerce any value to int when possible, otherwise return None."""
     try:
         if value is None:
             return None
@@ -16,7 +16,7 @@ def coerce_int(value: Any) -> Optional[int]:
 
 
 def is_truncated(text: Optional[str]) -> bool:
-    """Heuristic to detect truncated snippets (ellipsis or missing terminal punctuation)."""
+    """Heuristic for truncated text ending in ellipses or without sentence end."""
     if not text:
         return False
     t = str(text).strip()
@@ -24,7 +24,7 @@ def is_truncated(text: Optional[str]) -> bool:
 
 
 def pick_longer_text(*candidates: Optional[str]) -> Optional[str]:
-    """Return the longest non-empty trimmed candidate string, or None."""
+    """Pick the longest non-empty trimmed string among candidates."""
     texts = [str(c).strip() for c in candidates if c and str(c).strip()]
     if not texts:
         return None
@@ -32,10 +32,7 @@ def pick_longer_text(*candidates: Optional[str]) -> Optional[str]:
 
 
 def extract_followers_from_text(text: str) -> Optional[Dict[str, Any]]:
-    """Parse a text for followers/connections label and count across locales.
-
-    Returns dict with keys 'followersText' and 'followersCount' or None.
-    """
+    """Extract followers/connection count text and numeric value from a string."""
     try:
         if not text:
             return None

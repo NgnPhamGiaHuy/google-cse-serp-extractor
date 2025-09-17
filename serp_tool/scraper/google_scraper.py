@@ -17,33 +17,29 @@ from serp_tool.utils.delay_utils import async_delay
 
 
 class GoogleSerpScraper:
-    """Google SERP scraper using Google Custom Search Engine API"""
 
     def __init__(self):
         self.google = GoogleCSEClient()
         self._last_quota_error: Optional[QuotaExceededError] = None
 
     def _normalize_query(self, q: str, config: SearchConfig) -> Tuple[str, str]:
-        """Normalize query for deduplication and return both cleaned and normalized versions."""
+        """Return cleaned query and its normalized lowercase form for de-duplication."""
         cleaned = _validate_and_fix_query(q)
         cleaned = _apply_profile_sites(cleaned, getattr(config, 'profile_sites', None))
         normalized = ' '.join(str(cleaned).lower().split())
         return cleaned, normalized
 
     def normalize_query_for_dedup(self, q: str, config: SearchConfig) -> str:
-        """Normalize query for deduplication purposes."""
         _, normalized = self._normalize_query(q, config)
         return normalized
 
     def compute_clean_and_normalized(self, q: str, config: SearchConfig) -> Tuple[str, str]:
-        """Compute both cleaned and normalized versions of a query."""
         return self._normalize_query(q, config)
 
     @staticmethod
     def hash_normalized_query(normalized: str) -> str:
         from serp_tool.utils.dedup_utils import hash_normalized_query as _hash_normalized_query
         return _hash_normalized_query(normalized)
-
 
     async def _fetch_with_cse(self, sub_q: str, config: SearchConfig, seen: set, merged_results: List[Dict[str, Any]]) -> bool:
         try:
@@ -60,22 +56,22 @@ class GoogleSerpScraper:
                 results_per_page=config.results_per_page,
             )
             for item in items:
-                # Process all search results in this page, not just the first one
+
                 search_results = item.get('searchResults', [])
                 for result in search_results:
                     key = _dedup_key(result)
                     if key == ("", ""):
-                        # Fallback to page-based key if result is empty
+
                         key = (str(item.get('searchQuery', {}).get('page', '1')), str(item.get('searchQuery', {}).get('term', '')))
                     if key not in seen:
                         seen.add(key)
-                        # Create a new item with just this single result
+
                         single_result_item = {
                             "searchQuery": item.get('searchQuery', {}),
                             "searchResults": [result]
                         }
                         merged_results.append(single_result_item)
-            # Count total individual results across all pages
+
             total_individual_results = sum(len(item.get('searchResults', [])) for item in merged_results)
             scraper_logger.info(
                 f"Fetched {len(merged_results)} page items with {total_individual_results} total results (CSE)",
@@ -87,22 +83,22 @@ class GoogleSerpScraper:
             scraper_logger.error(
                 f"CSE quota exceeded: {str(e)}",
                 extra={
-                    "action": "cse_quota", 
-                    "status": "fail", 
+                    "action": "cse_quota",
+                    "status": "fail",
                     "keyword": sub_q,
                     "quota_info": e.quota_info,
                     "help_links": e.help_links
                 }
             )
-            # Store quota error info for potential use by the job system
+
             self._last_quota_error = e
-            raise e  # Re-raise the error since we only use Google CSE
+            raise e
         except Exception as e:
             scraper_logger.error(
                 f"CSE failed ({e})",
                 extra={"action": "cse_error", "status": "fail", "keyword": sub_q}
             )
-            raise e  # Re-raise the error since we only use Google CSE
+            raise e
         return False
 
 
@@ -134,8 +130,8 @@ class GoogleSerpScraper:
                         f"SubQuery cleaned: '{before}' -> '{sub_q}'",
                         extra={"action": "subquery_clean", "status": "success", "keyword": sub_q}
                     )
-                
-                # Only use Google CSE - check if it supports the requested features
+
+
                 cse_supported = (
                     self.google.is_configured() and
                     config.include_organic and not (config.include_paa or config.include_related or config.include_ads or config.include_ai_overview)

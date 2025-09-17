@@ -4,11 +4,13 @@ from typing import List, Optional
 
 
 def _should_split_query(query: str) -> bool:
+    """Heuristic for splitting overly long queries into sub-queries."""
     tokens = [t for t in str(query).split() if t]
     return len(query) > 256 or len(tokens) > 14
 
 
 def _split_query(query: str) -> List[str]:
+    """Split a long query into 3-6 chunks of roughly even length by tokens."""
     tokens = [t for t in str(query).split() if t]
     if not tokens:
         return []
@@ -25,6 +27,7 @@ def _split_query(query: str) -> List[str]:
 
 
 def _validate_and_fix_query(q: str) -> str:
+    """Normalize whitespace, balance parentheses, and clean redundant operators."""
     query = str(q or '').strip()
     if not query:
         return ''
@@ -61,27 +64,23 @@ def _validate_and_fix_query(q: str) -> str:
 
 
 def _apply_profile_sites(query: str, profile_sites: Optional[List[str]]) -> str:
+    """Append site filters if not already present in the query."""
     if not query:
         return query
-    
-    # If no profile sites are provided or the list is empty, return query as-is
+
     if not profile_sites or len(profile_sites) == 0:
         return query
-    
+
     ql = query.lower()
-    # Filter out empty or invalid site filters
+
     valid_sites = [s for s in profile_sites if s and s.strip() and s.startswith('site:')]
-    
-    # If no valid sites, return query as-is
+
     if not valid_sites:
         return query
-    
-    # Check if any of the site domains are already in the query
+
     domains = [s.split(':', 1)[1] for s in valid_sites if ':' in s]
     if any(domain in ql for domain in domains):
         return query
-    
-    # Add site filters to the query
-    return f"{query} (" + " OR ".join(valid_sites) + ")"
 
+    return f"{query} (" + " OR ".join(valid_sites) + ")"
 

@@ -2,6 +2,7 @@ from typing import List, Optional
 
 
 def _ensure_quoted(value: str) -> str:
+    """Return value wrapped in quotes if it has whitespace and is not already quoted."""
     s = str(value).strip()
     if not s:
         return s
@@ -13,25 +14,26 @@ def _ensure_quoted(value: str) -> str:
 
 
 def _build_site_filter(existing_query: str, profile_sites: Optional[List[str]] = None) -> str:
-    """Build site filter string for profile sites."""
+    """Build the site filter suffix that `_apply_profile_sites` would append.
+
+    Returns only the appended portion, or an empty string when nothing changes.
+    """
     from serp_tool.utils.query_utils import _apply_profile_sites
-    
+
     if not profile_sites or len(profile_sites) == 0:
         return ''
-    
-    # Use the query_utils function to get the full query with site filter
+
     full_query = _apply_profile_sites(existing_query, profile_sites)
-    
-    # Extract just the site filter part
+
     if full_query == existing_query:
-        return ''  # No site filter was added
-    
-    # Find the site filter part (everything after the original query)
+        return ''
+
     site_filter_part = full_query[len(existing_query):].strip()
     return site_filter_part
 
 
 def _tokenize_roles(values: List[str]) -> List[str]:
+    """Split role strings on commas and ORs, returning unique, order-preserving tokens."""
     tokens: List[str] = []
     for v in values:
         if not v:
@@ -59,6 +61,7 @@ def _tokenize_roles(values: List[str]) -> List[str]:
 
 
 def _compose_query(anchor: str, role_values: List[str], profile_sites: Optional[List[str]] = None) -> str:
+    """Compose a base query: anchor + optional site filter + optional role OR expression."""
     anchor_part = _ensure_quoted(anchor)
     roles = _tokenize_roles(role_values)
     role_expr = ''

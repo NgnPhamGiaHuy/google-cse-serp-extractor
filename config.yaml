@@ -25,8 +25,8 @@ api:
 
 search:
   # Defaults for searches (can be overridden per request)
-  results_per_page: 10      # 1..10 for Google CSE
-  max_pages: 3              # number of pages to fetch (allowed: 1–3)
+  results_per_page: 10      # fixed by Google CSE (max 10)
+  max_pages: 10             # number of pages to fetch (user-configurable)
   country: null             # e.g., us, vn (used as gl where supported)
   language: null            # e.g., en, vi (used as lr where supported)
   device: desktop           # desktop | mobile (provider-dependent)

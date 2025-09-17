@@ -9,7 +9,6 @@ _log_queue = None
 
 
 def create_file_handler() -> logging.Handler:
-    """Create the rotating file handler with our formatter and default context filter."""
     handler = TimedRotatingFileHandler(
         filename=str(current_log_file()), when="midnight", interval=1, backupCount=7, encoding="utf-8"
     )
@@ -19,7 +18,6 @@ def create_file_handler() -> logging.Handler:
 
 
 def ensure_queue_listener() -> QueueListener:
-    """Create and start a singleton QueueListener feeding the rotating file handler."""
     from queue import Queue
     global _log_queue_listener, _log_queue
     if _log_queue_listener is not None:
@@ -32,7 +30,6 @@ def ensure_queue_listener() -> QueueListener:
 
 
 def build_queue_handler(level: int) -> QueueHandler:
-    """Build a QueueHandler that writes to the same queue used by the listener."""
     global _log_queue
     qh = QueueHandler(_log_queue)
     qh.setLevel(level)

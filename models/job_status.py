@@ -4,7 +4,8 @@ from pydantic import BaseModel, Field
 
 
 class SearchJobStatus(BaseModel):
-    """Status of a search job"""
+    """Status and metrics for a long-running search job."""
+
     job_id: str
     status: Literal["pending", "running", "completed", "failed"]
     progress: int = Field(ge=0, le=100, description="Progress percentage")
@@ -14,19 +15,13 @@ class SearchJobStatus(BaseModel):
     error_message: Optional[str] = None
     created_at: datetime
     completed_at: Optional[datetime] = None
-    
-    # Enhanced progress tracking
     current_stage: Optional[str] = None
     stage_progress: Optional[int] = None
-    estimated_time_remaining: Optional[int] = None  # seconds
+    estimated_time_remaining: Optional[int] = None
     current_keyword: Optional[str] = None
-    processing_speed: Optional[float] = None  # keywords per minute
+    processing_speed: Optional[float] = None
     last_updated: Optional[datetime] = None
-    
-    # Additional metadata
     metadata: Optional[Dict[str, Any]] = None
-    
-    # Quota error tracking
     quota_error: Optional[Dict[str, Any]] = None
     quota_exceeded: bool = False
 

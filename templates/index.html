@@ -136,7 +136,7 @@
 Or paste JSON data:
 {
   &quot;keywords&quot;: [&quot;keyword1&quot;, &quot;keyword2&quot;],
-  &quot;config&quot;: {&quot;max_pages&quot;: 3}
+  &quot;config&quot;: {&quot;max_pages&quot;: 10}
 }" rows="8"></textarea>
             <button id="run-single" class="run-single-btn">Run</button>
         </div>
@@ -173,16 +173,14 @@ Or paste JSON data:
                 </select>
             </div>
             <div>
-                <label for="results_per_page">Results per page (10–100)</label>
-                <input id="results_per_page" type="number" min="10" max="100" value="100">
-            </div>
-            <div>
-                <label for="max_pages">Max pages</label>
-                <select id="max_pages">
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3" selected>3</option>
-                </select>
+                <label for="max_pages" style="display:flex;align-items:center;gap:6px">
+                    <span>Pages to fetch</span>
+                    <span
+                        title="Set how many Google result pages to fetch. Each page contains up to 10 results.">ℹ︎</span>
+                </label>
+                <input id="max_pages" type="number" min="1" step="1" value="10">
+                <div class="muted" style="margin-top:6px;font-size:12px">Each page contains up to 10 results (fixed by
+                    Google CSE)</div>
             </div>
             <div>
                 <label for="rate">Rate</label>
@@ -1159,8 +1157,9 @@ Or paste JSON data:
         async function startJob(keywords) {
             const config = {
                 // deprecated params removed
-                max_pages: Math.max(1, parseInt($('max_pages').value || '1') || 1),
-                results_per_page: Math.max(10, Math.min(100, parseInt($('results_per_page').value || '100'))),
+                max_pages: Math.max(1, parseInt($('max_pages').value || '10') || 10),
+                // UI always uses Google CSE max of 10 per page
+                results_per_page: 10,
                 include_organic: $('include_organic').checked,
                 include_paa: $('include_paa').checked,
                 include_related: $('include_related').checked,

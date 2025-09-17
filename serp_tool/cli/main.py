@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import asyncio
 import click
 from pathlib import Path
@@ -18,7 +17,6 @@ from .helpers import load_keywords, build_config_from_flags, deduplicate_and_log
 @click.option('--keywords', '-k', required=True, help='Path to keywords file (JSON, CSV, or Excel)')
 @click.option('--output', '-o', required=True, help='Output file path (JSON, CSV, or Excel)')
 @click.option('--max-pages', '-p', default=None, type=click.IntRange(1), help='Maximum pages to scrape (default from config)')
-@click.option('--results-per-page', '-r', default=None, type=click.IntRange(1, 100), help='Results per page (default from config)')
 @click.option('--include-organic/--no-organic', default=True, help='Include organic results (default: True)')
 @click.option('--include-paa/--no-paa', default=False, help='Include People Also Ask (default: False)')
 @click.option('--include-related/--no-related', default=False, help='Include related searches (default: False)')
@@ -30,7 +28,6 @@ def main(
     keywords: str,
     output: str,
     max_pages: int,
-    results_per_page: int,
     include_organic: bool,
     include_paa: bool,
     include_related: bool,
@@ -39,7 +36,6 @@ def main(
     profile_site: Optional[list],
     allow_duplicates: bool
 ):
-    """Google SERP Scraping Tool CLI"""
 
     async def run_scraping():
         try:
@@ -76,7 +72,7 @@ def main(
                 selected_sites,
                 allow_duplicates,
                 max_pages,
-                results_per_page,
+                None,
             )
 
             click.echo("\nScraping Configuration:")
@@ -168,7 +164,6 @@ def main(
         except Exception as e:
             cli_logger.error(f"Unexpected error: {str(e)}", extra={"action": "unexpected", "status": "fail"})
         finally:
-            # Cleanup temp directory on CLI exit
             cleanup_temp_dir()
 
     setup_root_logging()
@@ -177,5 +172,4 @@ def main(
 
 if __name__ == '__main__':
     main()
-
 

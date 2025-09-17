@@ -50,8 +50,8 @@ if [ $# -eq 0 ]; then
     echo "  $0 example_keywords.txt results.xlsx --max-pages 2"
     echo
     echo "Available options:"
-    echo "  --max-pages N          Maximum pages to scrape (default: 3)"
-    echo "  --results-per-page N   Results per page (default: 10)"
+    echo "  --max-pages N          Maximum pages to scrape (default: 10)"
+    echo "  (results per page fixed to 10 by Google CSE)"
     echo "  --include-organic      Include organic results (default: true)"
     echo "  --include-paa          Include People Also Ask"
     echo "  --include-related      Include related searches"

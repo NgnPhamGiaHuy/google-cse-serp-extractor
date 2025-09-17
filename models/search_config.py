@@ -3,9 +3,10 @@ from pydantic import BaseModel, Field
 
 
 class SearchConfig(BaseModel):
-    """Configuration for Google search scraping"""
-    max_pages: int = Field(default=3, ge=1, le=10, description="Maximum pages to scrape (default 3)")
-    results_per_page: int = Field(default=10, ge=1, le=100, description="Results per page")
+    """Parameters controlling search and scraping behavior."""
+
+    max_pages: int = Field(default=10, ge=1, description="Maximum pages to scrape (default 10)")
+    results_per_page: int = Field(default=10, ge=1, le=10, description="Results per page (Google CSE allows up to 10)")
     include_organic: bool = Field(default=True, description="Include organic results")
     include_paa: bool = Field(default=False, description="Include People Also Ask")
     include_related: bool = Field(default=False, description="Include related searches")

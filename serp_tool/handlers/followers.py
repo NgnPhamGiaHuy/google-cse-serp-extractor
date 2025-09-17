@@ -58,6 +58,7 @@ def _normalize_human_number(num_str: Optional[str], suffix: str) -> Optional[int
 
 
 def _extract_followers_from_record(record: Dict[str, Any]) -> Tuple[Optional[str], Optional[int]]:
+    """Extract a followers label and normalized count from a result record if present."""
     try:
         candidates: List[str] = []
 
